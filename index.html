@@ -153,7 +153,7 @@ table{font-size:13px}
 #serLog{max-height:30vh}.noack b{color:var(--c1)}.noack span{flex:1;line-height:1.5}
 footer{margin:28px 28px 0}
 </style></head><body><div class="wrapx">
-<header><div class="brand">PETTERSON <b>TOOLS</b></div><div class="hrow"><h1>CAN Lab <small>v2.3 · USB</small></h1><button id="bUsb" class="pri">Conectar USB</button><span id="con" class="bdg">desconectado</span><span class="mu" id="info"></span></div></header>
+<header><div class="brand">PETTERSON <b>TOOLS</b></div><div class="hrow"><h1>CAN Lab <small>v2.4 · USB</small></h1><button id="bUsb" class="pri">Conectar USB</button><span id="con" class="bdg">desconectado</span><span class="mu" id="info"></span></div></header>
 <div id="msg">Carregando configuração…</div>
 <div class="semusb" id="semusb"><b>Ligue o ESP32 no cabo USB e clique em "Conectar USB".</b><br>
 Escolha a porta COM do ESP32 (CP210x ou CH340). Feche o Monitor Serial do Arduino IDE antes: só um programa pode usar a porta.<br>
@@ -457,7 +457,7 @@ Escolha a porta COM do ESP32 (CP210x ou CH340). Feche o Monitor Serial do Arduin
 </div>
 <div class="sys-box">
 <h3>Informações</h3>
-<div class="mu">Petterson Tools · PT CAN Lab v2.3 (PT-CAN-01) — ECU › Cummins, parâmetros J1939, mostradores em ordem de prioridade, bateria</div>
+<div class="mu">Petterson Tools · PT CAN Lab v2.4 (PT-CAN-01) — ECU › Cummins, parâmetros J1939, mostradores em ordem de prioridade, bateria</div>
 <div class="mu">ESP32 + MCP2515 + TJA1050 · J1939 250 kbps</div>
 <div class="mu" id="sysHeap"></div>
 </div>
@@ -722,15 +722,14 @@ let lastPgn={};   // v1.7: últimos dados por PGN (para detalhes como a chave do
 // ===== v0.9: Cores genéricas via thresholds =====
 function gColor(id,v){
  const g=GD.find(x=>x.id===id);
- if(!g)return 'var(--ok)';
+ if(!g)return 'var(--c1)';
  if(ehBat(g))return batInfo(v).c;   // v2.2
- if(ehPed(g))return 'var(--c1)';     // v2.3: pedal sempre amarelo
  if(g.her!==undefined&&v>g.her)return 'var(--er)';
  if(g.hwa!==undefined&&v>g.hwa)return 'var(--wa)';
  if(g.ler!==undefined&&v<g.ler)return 'var(--er)';
  if(g.lwa!==undefined&&v<g.lwa)return 'var(--wa)';
  if(g.cold!==undefined&&v<g.cold)return 'var(--bl)';
- return 'var(--ok)';
+ return 'var(--c1)';   // v2.4: faixa normal em amarelo
 }
 
 // ===== Init gauges =====
@@ -754,36 +753,16 @@ function batSvg(id){
 }
 // v2.2: mostrador do pedal (ícone que inclina conforme a posição + barra)
 const ehPed=g=>g.tipo==='pedal'||g.id==='pedal';
-function pedSvg(id){   // v2.3: pé apoiado no pedal (vista de lado); o conjunto gira no pivô do pedal
- return '<svg viewBox="0 0 120 66" class="gs">'+
-  '<line x1="18" y1="58" x2="102" y2="58" stroke="#3a3a3d" stroke-width="3" stroke-linecap="round"/>'+
-  '<line id="pl_'+id+'" x1="68.4" y1="51.4" x2="106" y2="16" stroke="#3a3a3d" stroke-width="13" stroke-linecap="round"/>'+
-  '<g id="p_'+id+'" style="transform-origin:39px 56px;transform:rotate(10deg)">'+
-   '<path d="M43,13 Q50,9 55,17 L61,33 Q64,42 72,46 L72,56 L43,56 Z" fill="#8a8a90"/>'+
-   '<path d="M43,52 L72,52 L72,56 L43,56 Z" fill="#5a5a60"/>'+
-   '<rect id="pf_'+id+'" x="35" y="9" width="7" height="48" rx="2.5" fill="#3a3a3d"/>'+
-  '</g>'+
-  '<circle cx="39" cy="56" r="3.5" fill="#5a5a60"/>'+
-  '<rect x="22" y="62" width="76" height="3.5" rx="1.75" fill="#2a2a2d"/><rect id="pb_'+id+'" x="22" y="62" width="0" height="3.5" rx="1.75" fill="#3a3a3d"/></svg>';
-}
-// gira pedal + pé no pivô e mantém o joelho parado (a perna acompanha o tornozelo)
-function pedPose(id,deg){
- const g=$('#p_'+id),l=$('#pl_'+id);if(!g)return;
- g.style.transform='rotate('+deg.toFixed(1)+'deg)';
- const r=deg*Math.PI/180,ax=66-39,ay=48-56;   // tornozelo no desenho
- if(l){l.setAttribute('x1',(39+ax*Math.cos(r)-ay*Math.sin(r)).toFixed(1));l.setAttribute('y1',(56+ax*Math.sin(r)+ay*Math.cos(r)).toFixed(1))}
-}
 const corVar=c=>c.startsWith('var')?getComputedStyle(document.documentElement).getPropertyValue(c.slice(4,-1)).trim():c;
 function initGauges(){
  let h='';
  for(const g of GD)
-  if(ehPed(g))h+='<div class="gc"><div class="gl">'+g.lbl+'</div>'+pedSvg(g.id)+
-   '<div class="gv" id="v_'+g.id+'">—</div><div class="gu">'+g.u+'</div><div class="gx" id="x_'+g.id+'"></div></div>';
-  else if(ehBat(g))h+='<div class="gc"><div class="gl">'+g.lbl+'</div>'+batSvg(g.id)+
+  if(ehBat(g))h+='<div class="gc"><div class="gl">'+g.lbl+'</div>'+batSvg(g.id)+
    '<div class="gv" id="v_'+g.id+'">—</div><div class="gu">'+g.u+'</div><div class="gx" id="x_'+g.id+'"></div></div>';
   else h+='<div class="gc"><div class="gl">'+g.lbl+'</div>'+
    '<svg viewBox="0 0 120 66" class="gs"><path d="M10,62 A50,50 0 0,1 110,62" fill="none" stroke="#2a2a2d" stroke-width="8" stroke-linecap="round"/>'+
-   '<path id="a_'+g.id+'" d="M10,62 A50,50 0 0,1 110,62" fill="none" stroke="#3a3a3d" stroke-width="8" stroke-linecap="round" stroke-dasharray="'+AL+'" stroke-dashoffset="'+AL+'"/></svg>'+
+   '<path id="a_'+g.id+'" d="M10,62 A50,50 0 0,1 110,62" fill="none" stroke="#3a3a3d" stroke-width="8" stroke-linecap="round" stroke-dasharray="'+AL+'" stroke-dashoffset="'+AL+'"/>'+
+   (ehPed(g)?'<image href="pedal.png" x="39" y="27" width="42" height="30" preserveAspectRatio="xMidYMid meet"/>':'')+'</svg>'+
    '<div class="gv" id="v_'+g.id+'">—</div><div class="gu">'+g.u+'</div><div class="gx" id="x_'+g.id+'"></div></div>';
  $('#gauges').innerHTML=h;
 }
@@ -802,22 +781,6 @@ function updGauges(vals){
  for(const g of GD){
   const el=$('#v_'+g.id),arc=$('#a_'+g.id);
   const v=vals[g.id];
-  if(ehPed(g)){   // v2.2: pedal
-   const pg=$('#p_'+g.id),pf=$('#pf_'+g.id),pb=$('#pb_'+g.id);
-   const tem=v!==undefined&&v!==null,er=tem&&Number.isNaN(v);
-   if(tem)any=true;
-   if(tem)gExtra(g);
-   if(!tem||er){
-    if(el){el.textContent=er?'ERRO':'—';el.style.color=er?'var(--er)':''}
-    pedPose(g.id,10);if(pf)pf.setAttribute('fill',er?corVar('var(--er)'):'#3a3a3d');if(pb)pb.setAttribute('width',0);
-    continue;
-   }
-   const pct=Math.max(0,Math.min(1,v/100)),cc=gColor(g.id,v),c=corVar(cc);
-   if(el){el.textContent=v.toFixed(0);el.style.color=cc}
-   pedPose(g.id,10-38*pct);   // solto em pé → pisado deitado
-   if(pf)pf.setAttribute('fill',c);if(pb){pb.setAttribute('width',(76*pct).toFixed(1));pb.setAttribute('fill',c)}
-   continue;
-  }
   if(ehBat(g)){   // v2.2: bateria
    const bar=$('#b_'+g.id),x=$('#x_'+g.id);
    if(v===undefined||v===null||Number.isNaN(v)){
