@@ -112,6 +112,11 @@ p{margin:8px 0}
 .mcard b{display:block;font-size:16px;margin-bottom:4px;color:var(--tx)}
 .mcard span{font-size:12px;color:var(--mu)}
 .mcard.off{opacity:.45;cursor:default;border-left-color:var(--ln)}
+.par-g{background:var(--pn);border:1px solid var(--ln);border-radius:8px;padding:10px 14px;margin:0 0 12px}
+.par-g h3{margin:0 0 6px;font-size:14px;color:var(--c1)}.par-g h3 span{color:var(--mu);font-weight:400;font-size:12px;margin-left:8px}
+.par-t{display:grid;grid-template-columns:repeat(3,1fr);gap:2px 24px}
+.par-t div{display:flex;justify-content:space-between;border-bottom:1px dotted #2a2a2d;padding:3px 0;font-size:13px}
+.par-t b{font-variant-numeric:tabular-nums}.par-t .e{color:var(--er)}.par-t .n{color:var(--mu);font-weight:400}
 .mcard .soon{display:inline-block;margin-top:6px;font-size:11px;padding:1px 7px;border-radius:99px;background:#2a2a2d;color:var(--mu)}
 /* v1.7: layout para computador */
 body{min-width:1100px;font-size:14px}
@@ -148,7 +153,7 @@ table{font-size:13px}
 #serLog{max-height:30vh}.noack b{color:var(--c1)}.noack span{flex:1;line-height:1.5}
 footer{margin:28px 28px 0}
 </style></head><body><div class="wrapx">
-<header><div class="brand">PETTERSON <b>TOOLS</b></div><div class="hrow"><h1>CAN Lab <small>v1.9 · USB</small></h1><button id="bUsb" class="pri">Conectar USB</button><span id="con" class="bdg">desconectado</span><span class="mu" id="info"></span></div></header>
+<header><div class="brand">PETTERSON <b>TOOLS</b></div><div class="hrow"><h1>CAN Lab <small>v2.0 · USB</small></h1><button id="bUsb" class="pri">Conectar USB</button><span id="con" class="bdg">desconectado</span><span class="mu" id="info"></span></div></header>
 <div id="msg">Carregando configuração…</div>
 <div class="semusb" id="semusb"><b>Ligue o ESP32 no cabo USB e clique em "Conectar USB".</b><br>
 Escolha a porta COM do ESP32 (CP210x ou CH340). Feche o Monitor Serial do Arduino IDE antes: só um programa pode usar a porta.<br>
@@ -276,6 +281,7 @@ Escolha a porta COM do ESP32 (CP210x ou CH340). Feche o Monitor Serial do Arduin
 <p class="mu">Escolha a marca do equipamento. Cada marca reúne as funções específicas dela.</p>
 <div class="mgrid">
 <button class="mcard" data-brand="scania"><b>Scania</b><span>EMS S6/S7/S8 · painel ICL · coordenador COO</span></button>
+<button class="mcard" data-brand="cummins"><b>Cummins</b><span>CM2150 · CM850 · J1939 padrão (identificação, parâmetros, falhas)</span></button>
 <div class="mcard off"><b>Outras marcas</b><span>Entram aqui conforme formos criando as funções</span></div>
 </div>
 </div>
@@ -289,7 +295,39 @@ Escolha a porta COM do ESP32 (CP210x ou CH340). Feche o Monitor Serial do Arduin
 <div class="mcard off"><b>Testes</b><span>Teste de lâmpadas e ponteiros do painel</span><span class="soon">aguardando captura do SDP3</span></div>
 </div>
 </div>
+<div id="mrcCummins" style="display:none">
+<div class="crumb"><a data-crumb="home">ECU</a> › <b style="color:var(--tx)">Cummins</b></div>
+<div class="mgrid">
+<button class="mcard" data-go="cmId"><b>Identificação</b><span>Software/calibração (FEDA), componente, ECU, VIN, horas, combustível, hodômetro e configuração do motor</span></button>
+<button class="mcard" data-go="cmPar"><b>Parâmetros</b><span>Todos os valores J1939 que o módulo transmite, decodificados, com interruptores (freio, embreagem, pedal)</span></button>
+<button class="mcard" data-go="dtc"><b>Leitura de falhas</b><span>DM1 ativas e DM2 inativas (aba Falhas) · apagar falhas fica em Identificação</span></button>
+</div>
+</div>
 </section>
+
+<!-- v2.0: Cummins — Identificação via pedidos J1939 -->
+<section class="pg" id="cmId">
+<div class="crumb"><a data-crumb="home">ECU</a> › <a data-crumb="cummins">Cummins</a> › <b style="color:var(--tx)">Identificação</b></div>
+<div class="sc">
+<div class="sh"><span class="dot" id="cmDot" style="background:var(--mu)"></span>Identificação do módulo (pedidos J1939)</div>
+<p class="mu">A ferramenta pede ao módulo (como SA F9) cada informação padrão do J1939. O canal vai para <b>Normal</b> durante a leitura e volta ao modo anterior no fim. Leva uns 15 s.</p>
+<div class="row" style="margin:10px 0"><button class="pri" id="cmLer">Ler identificação</button><span class="mu" id="cmSt"></span></div>
+<div class="wrap" style="max-height:none"><table class="ecu-tbl"><thead><tr><th>PGN</th><th>Informação</th><th>Valor</th><th>Bytes recebidos</th></tr></thead><tbody id="cmRows"><tr><td colspan="4" class="mu">Clique em "Ler identificação".</td></tr></tbody></table></div>
+</div>
+<div class="sc" style="margin-top:14px">
+<div class="sh"><span class="dot" style="background:var(--wa)"></span>Apagar falhas</div>
+<p class="mu">Pedido J1939 ao motor (SA 00). Na bancada, as falhas de sensores desligados voltam a aparecer logo depois — é normal.</p>
+<div class="row"><button class="btn-danger" id="cmDm11">Apagar falhas ATIVAS (DM11)</button><button class="btn-danger" id="cmDm3">Apagar falhas INATIVAS (DM3)</button><span class="mu" id="cmDmSt"></span></div>
+</div>
+</section>
+
+<!-- v2.0: parâmetros J1939 decodificados -->
+<section class="pg" id="cmPar">
+<div class="crumb"><a data-crumb="home">ECU</a> › <a data-crumb="cummins">Cummins</a> › <b style="color:var(--tx)">Parâmetros</b></div>
+<p class="mu">Tudo que o módulo transmite, decodificado pelo padrão J1939-71. Atualiza a cada segundo. <b style="color:var(--er)">ERRO</b> = o módulo informa falha no sinal · <span class="mu">n/d</span> = não disponível. Funciona para qualquer módulo J1939.</p>
+<div id="parBox"></div>
+</section>
+
 
 <!-- v1.1: ECU ID — Identificação da ECU via UDS (estilo XCOM Scania) -->
 <section class="pg" id="ecu">
@@ -419,7 +457,7 @@ Escolha a porta COM do ESP32 (CP210x ou CH340). Feche o Monitor Serial do Arduin
 </div>
 <div class="sys-box">
 <h3>Informações</h3>
-<div class="mu">Petterson Tools · PT CAN Lab v1.9 (PT-CAN-01) — ligação USB · captura rápida binária</div>
+<div class="mu">Petterson Tools · PT CAN Lab v2.0 (PT-CAN-01) — ECU › Cummins, parâmetros J1939, 23 mostradores</div>
 <div class="mu">ESP32 + MCP2515 + TJA1050 · J1939 250 kbps</div>
 <div class="mu" id="sysHeap"></div>
 </div>
@@ -577,11 +615,37 @@ const FMI={
 let GD=[];  // será carregado do /api/config
 let cfgObj={};  // objeto completo da config
 
+
+// ===== v2.0: mostradores novos e correção da pressão do rail (feito uma vez, gravado no ESP32) =====
+const G20=[
+ {id:"pedal",lbl:"PEDAL ACELERADOR",u:"%",mn:0,mx:100,d:0,pgn:61443,sb:1,nb:1,le:true,res:0.4,off:0,na:255},
+ {id:"carga",lbl:"CARGA MOTOR",u:"%",mn:0,mx:100,d:0,pgn:61443,sb:2,nb:1,le:true,res:1,off:0,na:255,hwa:90},
+ {id:"torque",lbl:"TORQUE REAL",u:"%",mn:0,mx:100,d:0,pgn:61444,sb:2,nb:1,le:true,res:1,off:-125,na:255},
+ {id:"tensao",lbl:"TENSÃO BATERIA",u:"V",mn:0,mx:32,d:1,pgn:65271,sb:4,nb:2,le:true,res:0.05,off:0,na:65535},
+ {id:"veloc",lbl:"VELOCIDADE",u:"km/h",mn:0,mx:140,d:0,pgn:65265,sb:1,nb:2,le:true,res:0.00390625,off:0,na:65535},
+ {id:"consumo",lbl:"CONSUMO",u:"L/h",mn:0,mx:80,d:1,pgn:65266,sb:0,nb:2,le:true,res:0.05,off:0,na:65535},
+ {id:"nivAgua",lbl:"NÍVEL ÁGUA",u:"%",mn:0,mx:100,d:0,pgn:65263,sb:7,nb:1,le:true,res:0.4,off:0,na:255,ler:40,lwa:60},
+ {id:"nivOleo",lbl:"NÍVEL ÓLEO",u:"%",mn:0,mx:100,d:0,pgn:65263,sb:2,nb:1,le:true,res:0.4,off:0,na:255,ler:40,lwa:60},
+ {id:"arlaNiv",lbl:"NÍVEL ARLA",u:"%",mn:0,mx:100,d:0,pgn:65110,sb:0,nb:1,le:true,res:0.4,off:0,na:255,ler:10,lwa:20},
+ {id:"arlaTemp",lbl:"TEMP ARLA",u:"°C",mn:-40,mx:80,d:0,pgn:65110,sb:1,nb:1,le:true,res:1,off:-40,na:255},
+ {id:"baro",lbl:"PRESSÃO ATMOSF.",u:"bar",mn:0,mx:1.2,d:2,pgn:65269,sb:0,nb:1,le:true,res:0.005,off:0,na:255},
+ {id:"tAmb",lbl:"TEMP AMBIENTE",u:"°C",mn:-40,mx:60,d:0,pgn:65269,sb:3,nb:2,le:true,res:0.03125,off:-273,na:65535},
+ {id:"tEsc",lbl:"TEMP ESCAPE",u:"°C",mn:0,mx:800,d:0,pgn:65270,sb:5,nb:2,le:true,res:0.03125,off:-273,na:65535,her:700,hwa:600},
+ {id:"freioMot",lbl:"FREIO MOTOR",u:"%",mn:0,mx:100,d:0,pgn:61440,sb:1,nb:1,le:true,res:1,off:-125,na:255}
+];
+function cfgMigra20(c){
+ if(!c||!Array.isArray(c.gauges)||c.v20)return false;
+ const r=c.gauges.find(g=>g.id==='pRail');
+ if(r&&r.pgn===65243&&r.sb===0){r.sb=2;r.nb=2;r.res=0.0390625;r.off=0;r.na=65535}   // SPN 157 = bytes 3-4, 1/256 MPa
+ for(const g of G20)if(!c.gauges.some(x=>x.id===g.id))c.gauges.push(Object.assign({},g));
+ c.v20=1;return true;
+}
 async function loadConfig(repassa){
  try{
   const r=await fetch('/api/config');
   cfgObj=await r.json();
   GD=cfgObj.gauges||[];
+  if(cfgMigra20(cfgObj)){GD=cfgObj.gauges;try{await fetch('/api/config',{method:'POST',body:JSON.stringify(cfgObj)})}catch(e){}}
   msg('Configuração carregada: '+GD.length+' gauges');
  }catch(e){
   if(repassa)throw e;
@@ -668,7 +732,7 @@ function initGauges(){
 // v1.7: linha extra abaixo do gauge (pedal: chave de marcha lenta SPN 558, byte 1 bits 1-2)
 function gExtra(g){
  const x=$('#x_'+g.id);if(!x)return;
- if(g.pgn===61443&&lastPgn[61443]){
+ if(g.pgn===61443&&g.sb===1&&lastPgn[61443]){
   const s=lastPgn[61443][0]&3;
   const t=[['pedal pisado','ok'],['pedal solto (marcha lenta)',''],['chave marcha lenta: ERRO','er'],['','']][s];
   x.textContent=t[0];x.className='gx '+t[1];
@@ -746,12 +810,12 @@ $('#bNoAck').onclick=()=>cmd('m normal');
 $$('[data-c]').forEach(b=>b.onclick=()=>cmd(b.dataset.c));
 $('#xt').onchange=e=>cmd('k '+e.target.value);
 
-const ECU_PGS=['mrc','ecu','sim','kwp'];  // v1.3: páginas do grupo ECU (v1.4: + kwp)
-function go(p){tab=p;const g=ECU_PGS.includes(p)?'mrc':p;$$('.tab').forEach(b=>b.classList.toggle('on',b.dataset.p==g));$$('.pg').forEach(s=>s.classList.toggle('on',s.id==p));
+const ECU_PGS=['mrc','ecu','sim','kwp','cmId','cmPar'];  // v1.3: páginas do grupo ECU (v1.4: + kwp)
+function go(p){tab=p;if(p==='cmPar')setTimeout(parAtualiza,50);const g=ECU_PGS.includes(p)?'mrc':p;$$('.tab').forEach(b=>b.classList.toggle('on',b.dataset.p==g));$$('.pg').forEach(s=>s.classList.toggle('on',s.id==p));
  if(p==='sys')updFs();if(p==='cfg')renderCfgList();}
 $$('.tab').forEach(b=>b.onclick=()=>{if(b.dataset.p==='mrc')ecuMenu('home');else go(b.dataset.p)});
 // v1.3: menu ECU por marca
-function ecuMenu(v){go('mrc');$('#mrcHome').style.display=v==='home'?'':'none';$('#mrcScania').style.display=v==='scania'?'':'none';}
+function ecuMenu(v){go('mrc');$('#mrcHome').style.display=v==='home'?'':'none';$('#mrcScania').style.display=v==='scania'?'':'none';$('#mrcCummins').style.display=v==='cummins'?'':'none';}
 document.addEventListener('click',e=>{const c=e.target.closest('[data-crumb]');if(c){ecuMenu(c.dataset.crumb);return}
  const br=e.target.closest('[data-brand]');if(br){ecuMenu(br.dataset.brand);return}
  const g=e.target.closest('.mcard[data-go]');if(g)go(g.dataset.go);});
@@ -1101,6 +1165,140 @@ $('#capRel').onclick=()=>{
  R.push('','(CTS e EndOfMsgAck omitidos: '+rts+')');
  baixar(capNome('_relatorio.txt'),R.join('\r\n'),'text/plain');msg('Relatório exportado');
 };
+
+
+// ===================== v2.0: dicionário J1939-71 (parâmetros) =====================
+// [SPN, nome, byte inicial (1..8), bit inicial (1..8), nº de bits, resolução, offset, unidade, estados?]
+const ST2={0:'desligado',1:'ligado',2:'ERRO',3:'n/d'};
+const JD={
+ 0xF004:['EEC1 — controle do motor 1',[[899,'Modo de torque',1,1,4,1,0,''],[512,'Torque pedido pelo motorista',2,1,8,1,-125,'%'],[513,'Torque real',3,1,8,1,-125,'%'],[190,'Rotação',4,1,16,0.125,0,'rpm'],[1483,'Quem controla (SA)',6,1,8,1,0,'hex'],[1675,'Modo do motor de partida',7,1,4,1,0,''],[2432,'Torque pedido pelo motor',8,1,8,1,-125,'%']]],
+ 0xF003:['EEC2 — acelerador',[[558,'Chave de marcha lenta',1,1,2,0,0,'',{0:'pedal pisado',1:'pedal solto (marcha lenta)',2:'ERRO',3:'n/d'}],[559,'Kickdown',1,3,2,0,0,'',ST2],[1437,'Limitador de velocidade',1,5,2,0,0,'',{0:'ativo',1:'inativo',2:'ERRO',3:'n/d'}],[91,'Posição do pedal',2,1,8,0.4,0,'%'],[92,'Carga na rotação atual',3,1,8,1,0,'%'],[974,'Acelerador remoto',4,1,8,0.4,0,'%'],[29,'Pedal 2',5,1,8,0.4,0,'%'],[3357,'Torque máximo disponível',7,1,8,0.4,0,'%']]],
+ 0xF000:['ERC1 — freio motor / retarder',[[900,'Modo de torque',1,1,4,1,0,''],[520,'Torque real do freio',2,1,8,1,-125,'%'],[1085,'Torque pretendido',3,1,8,1,-125,'%'],[1480,'Quem controla (SA)',5,1,8,1,0,'hex'],[1715,'Pedido do motorista',6,1,8,1,-125,'%'],[1717,'Torque máximo disponível',8,1,8,1,-125,'%']]],
+ 0xFEEE:['ET1 — temperaturas do motor',[[110,'Temp. água',1,1,8,1,-40,'°C'],[174,'Temp. combustível',2,1,8,1,-40,'°C'],[175,'Temp. óleo',3,1,16,0.03125,-273,'°C'],[176,'Temp. óleo do turbo',5,1,16,0.03125,-273,'°C'],[52,'Temp. intercooler',7,1,8,1,-40,'°C'],[1134,'Abertura termostato intercooler',8,1,8,0.4,0,'%']]],
+ 0xFEEF:['EFL/P1 — níveis e pressões',[[94,'Pressão de combustível',1,1,8,0.04,0,'bar'],[22,'Pressão do blow-by',2,1,8,0.05,0,'kPa'],[98,'Nível do óleo',3,1,8,0.4,0,'%'],[100,'Pressão do óleo',4,1,8,0.04,0,'bar'],[101,'Pressão do cárter',5,1,16,0.0078125,-250,'kPa'],[109,'Pressão da água',7,1,8,0.02,0,'bar'],[111,'Nível da água',8,1,8,0.4,0,'%']]],
+ 0xFEDB:['EFL/P2 — pressões de injeção',[[164,'Pressão de controle da injeção',1,1,16,0.0390625,0,'bar'],[157,'Pressão do rail',3,1,16,0.0390625,0,'bar'],[156,'Pressão rail de avanço',5,1,16,0.0390625,0,'bar'],[1349,'Pressão rail 2',7,1,16,0.0390625,0,'bar']]],
+ 0xFEF6:['IC1 — admissão e escape',[[81,'Pressão entrada DPF',1,1,8,0.5,0,'kPa'],[102,'Pressão do turbo',2,1,8,0.02,0,'bar'],[105,'Temp. coletor de admissão',3,1,8,1,-40,'°C'],[106,'Pressão entrada de ar',4,1,8,0.02,0,'bar'],[107,'Restrição filtro de ar',5,1,8,0.05,0,'kPa'],[173,'Temp. de escape',6,1,16,0.03125,-273,'°C'],[112,'Restrição filtro da água',8,1,8,0.5,0,'kPa']]],
+ 0xFEF5:['AMB — condições ambiente',[[108,'Pressão atmosférica',1,1,8,0.005,0,'bar'],[170,'Temp. cabine',2,1,16,0.03125,-273,'°C'],[171,'Temp. ambiente',4,1,16,0.03125,-273,'°C'],[172,'Temp. entrada de ar',6,1,8,1,-40,'°C'],[79,'Temp. do piso',7,1,16,0.03125,-273,'°C']]],
+ 0xFEF7:['VEP1 — elétrica',[[114,'Corrente da bateria',1,1,8,1,-125,'A'],[115,'Corrente do alternador',2,1,8,1,0,'A'],[167,'Tensão do sistema de carga',3,1,16,0.05,0,'V'],[168,'Tensão da bateria',5,1,16,0.05,0,'V'],[158,'Tensão na chave',7,1,16,0.05,0,'V']]],
+ 0xFEF1:['CCVS — velocidade e interruptores',[[70,'Freio de estacionamento',1,3,2,0,0,'',{0:'solto',1:'puxado',2:'ERRO',3:'n/d'}],[84,'Velocidade',2,1,16,0.00390625,0,'km/h'],[595,'Piloto automático ativo',4,1,2,0,0,'',ST2],[596,'Chave do piloto automático',4,3,2,0,0,'',ST2],[597,'Pedal de freio',4,5,2,0,0,'',{0:'solto',1:'pisado',2:'ERRO',3:'n/d'}],[598,'Pedal de embreagem',4,7,2,0,0,'',{0:'solto',1:'pisado',2:'ERRO',3:'n/d'}],[86,'Velocidade programada',6,1,8,1,0,'km/h'],[527,'Estado do piloto automático',7,6,3,1,0,''],[966,'Modo de teste do motor',8,5,2,0,0,'',ST2]]],
+ 0xFEF2:['LFE — consumo',[[183,'Consumo',1,1,16,0.05,0,'L/h'],[184,'Consumo instantâneo',3,1,16,0.001953125,0,'km/L'],[185,'Consumo médio',5,1,16,0.001953125,0,'km/L'],[51,'Posição da borboleta',7,1,8,0.4,0,'%']]],
+ 0xFEDF:['EEC3 — controle do motor 3',[[514,'Torque de atrito',1,1,8,1,-125,'%'],[515,'Rotação desejada',2,1,16,0.125,0,'rpm'],[519,'Assimetria da rotação desejada',4,1,8,1,0,''],[2978,'Perdas parasitas estimadas',5,1,8,1,-125,'%']]],
+ 0xFE56:['AT1T1I — tanque de ARLA',[[1761,'Nível do ARLA',1,1,8,0.4,0,'%'],[3031,'Temp. do ARLA',2,1,8,1,-40,'°C'],[3517,'Nível do ARLA (altura)',3,1,16,0.1,0,'mm']]],
+ 0xFEC1:['VDHR — distância',[[917,'Hodômetro',1,1,32,0.005,0,'km'],[918,'Distância parcial',5,1,32,0.005,0,'km']]],
+ 0xFEE5:['HOURS — horas de motor',[[247,'Horas de motor',1,1,32,0.05,0,'h'],[249,'Rotações totais',5,1,32,1000,0,'']]],
+ 0xFEE9:['LFC — combustível total',[[182,'Combustível da viagem',1,1,32,0.5,0,'L'],[250,'Combustível total',5,1,32,0.5,0,'L']]],
+ 0xFEFC:['DD — painel',[[80,'Nível do lavador',1,1,8,0.4,0,'%'],[96,'Nível de combustível',2,1,8,0.4,0,'%']]],
+ 0xFEFF:['OI — indicadores',[[97,'Água no combustível',1,1,2,0,0,'',{0:'não',1:'SIM',2:'ERRO',3:'n/d'}]]],
+};
+function jVal(d,s){
+ const[,,by,bi,nb,res,off,un,est]=s;
+ let raw=0;
+ if(nb>=8){const n=nb/8;if(by-1+n>d.length)return null;for(let k=n-1;k>=0;k--)raw=raw*256+d[by-1+k];
+  const mx=Math.pow(256,n);
+  if(raw>=mx-mx/256)return{t:'n/d',c:'n'};                          // FF / FFxx
+  if(raw>=mx-mx/128)return{t:'ERRO',c:'e'};                         // FE / FExx
+  if(raw>=mx-mx/256*5)return{t:'n/d',c:'n'};                      // FB..FD / FBxx..FDxx
+ }else{if(by>d.length)return null;raw=(d[by-1]>>(bi-1))&((1<<nb)-1);
+  if(est)return{t:est[raw]??String(raw),c:(est[raw]==='ERRO'?'e':est[raw]==='n/d'?'n':'')};
+  if(nb>=3&&raw===(1<<nb)-1)return{t:'n/d',c:'n'};
+ }
+ if(un==='hex')return{t:hx(raw,2)+(SA[raw]?' '+SA[raw]:''),c:''};
+ const v=raw*res+off,dec=res>=1?0:res>=0.1?1:res>=0.01?2:res>=0.005?3:1;
+ return{t:(un==='km'||un==='h'||un==='L'?v.toLocaleString('pt-BR',{maximumFractionDigits:1}):v.toFixed(dec))+(un?' '+un:''),c:''};
+}
+async function parAtualiza(){
+ if(tab!=='cmPar')return;
+ try{
+  const j=await(await fetch('/api/ids')).json();
+  const grupos=[];
+  for(const e of j.e){
+   if(!(e[1]&1))continue;
+   const id=e[0],pf=(id>>>16)&255,pgn=pf<240?(id>>>8)&0x3FF00:(id>>>8)&0x3FFFF,sa=id&255,def=JD[pgn];
+   if(!def)continue;
+   const d=parseHex(e[5]);
+   grupos.push({pgn,sa,def,d,age:e[7]});
+  }
+  grupos.sort((a,b)=>a.sa-b.sa||a.pgn-b.pgn);
+  const outros=j.e.filter(e=>(e[1]&1)&&!JD[((e[0]>>>16)&255)<240?(e[0]>>>8)&0x3FF00:(e[0]>>>8)&0x3FFFF]);
+  let h=grupos.map(g=>'<div class="par-g"'+(g.age>3000?' style="opacity:.45"':'')+'><h3>'+g.def[0]+'<span>PGN '+hx(g.pgn,4)+' · SA '+hx(g.sa,2)+(SA[g.sa]?' '+SA[g.sa]:'')+' · '+g.d.map(v=>hx(v,2)).join(' ')+'</span></h3><div class="par-t">'+
+   g.def[1].map(s=>{const r=jVal(g.d,s);return r?'<div><span>'+s[1]+' <span class="mu">SPN '+s[0]+'</span></span><b class="'+r.c+'">'+r.t+'</b></div>':''}).join('')+'</div></div>').join('');
+  if(outros.length)h+='<div class="par-g"><h3>Outras mensagens (sem decodificação)<span>'+outros.length+' IDs</span></h3><div class="par-t">'+
+   outros.map(e=>{const id=e[0],ext=1;return '<div><span>'+idStr(id,ext)+' <span class="mu">'+desc(id,ext)+'</span></span><b class="n">'+(e[5].match(/../g)||[]).join(' ')+'</b></div>'}).join('')+'</div></div>';
+  $('#parBox').innerHTML=h||'<p class="mu">Nenhuma mensagem J1939 recebida ainda.</p>';
+ }catch(e){}
+}
+setInterval(parAtualiza,1000);
+
+// ===================== v2.0: pedidos J1939 e montagem de mensagens longas =====================
+async function framesDesde(s){const j=await(await fetch('/api/frames?s='+s)).json();return j}
+async function cabecaFrames(){return (await framesDesde(4294967295)).h}
+// Pede um PGN (request 18EA<da>F9) e junta a resposta (quadro único ou BAM/RTS de várias partes).
+async function j1939Pede(pgn,da,espera){
+ da=da??0xFF;espera=espera||1500;
+ let s=await cabecaFrames();
+ const rq=hx(pgn&255,2)+' '+hx((pgn>>8)&255,2)+' '+hx((pgn>>16)&255,2);
+ await fetch('/api/cmd?c='+encodeURIComponent('w 18EA'+hx(da,2)+'F9 '+rq));
+ const t0=Date.now(),tp={};let res=null;
+ while(Date.now()-t0<espera&&!res){
+  const j=await framesDesde(s);s=j.h;
+  for(const f of j.f){const[t,id,fl,len,dh]=f;if(!(fl&1))continue;
+   const d=parseHex(dh),pf=(id>>>16)&255,ps=(id>>>8)&255,sa=id&255;
+   const pg=pf<240?(id>>>8)&0x3FF00:(id>>>8)&0x3FFFF;
+   if(pg===pgn&&sa!==0xF9){res={sa,d};break}
+   if(pf===0xEC&&(d[0]===0x20||d[0]===0x10)&&(d[5]|d[6]<<8|d[7]<<16)===pgn){tp[sa]={tam:d[1]|d[2]<<8,n:d[3],pk:{}}}
+   if(pf===0xEB&&tp[sa]){tp[sa].pk[d[0]]=d.slice(1);const m=tp[sa];
+    if(Object.keys(m.pk).length>=m.n){let a=[];for(let k=1;k<=m.n;k++)a=a.concat(m.pk[k]||[]);res={sa,d:a.slice(0,m.tam)};break}}
+   if(pf===0xE8&&(d[5]|d[6]<<8|d[7]<<16)===pgn){res={sa,d,ack:d[0]}}
+  }
+  if(!res)await new Promise(r=>setTimeout(r,150));
+ }
+ return res;
+}
+const txt=a=>a.map(v=>v>=32&&v<127?String.fromCharCode(v):'·').join('');
+const campos=(a,de)=>txt(a.slice(de||0)).split('*').map(s=>s.replace(/·+$/,'').trim());
+const u32=(d,o)=>(d[o]|d[o+1]<<8|d[o+2]<<16)+d[o+3]*16777216;
+const IDP=[
+ [0xFEDA,'Software / calibração',r=>{const n=r.d[0],c=campos(r.d,1).filter(x=>x);return (n?n+' campo(s): ':'')+c.map(x=>'<b>'+x+'</b>').join(' · ')}],
+ [0xFDC5,'Identificação da ECU',r=>{const c=campos(r.d),L=['Nº de peça','Nº de série','Posição','Tipo','Fabricante','Nº de peça HW'];return c.filter(x=>x).map((x,i)=>(L[i]||'Campo '+(i+1))+': <b>'+x+'</b>').join('<br>')}],
+ [0xFEEB,'Componente (motor)',r=>{const c=campos(r.d),L=['Marca','Modelo','Nº de série (ESN)','Unidade'];return c.filter(x=>x).map((x,i)=>(L[i]||'Campo '+(i+1))+': <b>'+x+'</b>').join('<br>')}],
+ [0xFEEC,'VIN (chassi)',r=>'<b>'+campos(r.d)[0]+'</b>'],
+ [0xFEE5,'Horas de motor',r=>'<b>'+(u32(r.d,0)*0.05).toLocaleString('pt-BR',{maximumFractionDigits:1})+' h</b> · '+(u32(r.d,4)*1000).toLocaleString('pt-BR')+' rotações'],
+ [0xFEE9,'Combustível consumido',r=>'total <b>'+(u32(r.d,4)*0.5).toLocaleString('pt-BR')+' L</b> · viagem '+(u32(r.d,0)*0.5).toLocaleString('pt-BR')+' L'],
+ [0xFEC1,'Hodômetro',r=>'<b>'+(u32(r.d,0)*0.005).toLocaleString('pt-BR',{maximumFractionDigits:1})+' km</b> · parcial '+(u32(r.d,4)*0.005).toLocaleString('pt-BR',{maximumFractionDigits:1})+' km'],
+ [0xFEE3,'Configuração do motor (EC1)',r=>{const d=r.d,rpm=o=>((d[o]|d[o+1]<<8)*0.125).toFixed(0),tq=o=>d[o]-125;
+  const p=[[0,'marcha lenta'],[3,'ponto 2'],[6,'ponto 3'],[9,'ponto 4'],[12,'ponto 5']].map(([o,n])=>n+' '+rpm(o)+' rpm/'+tq(o+2)+'%').join(' · ');
+  return 'Marcha lenta <b>'+rpm(0)+' rpm</b> · rotação máx. sem carga <b>'+rpm(15)+' rpm</b> · torque de referência <b>'+(d[19]|d[20]<<8)+' N·m</b><br><span class="mu">Curva: '+p+'</span>'}],
+];
+$('#cmLer').onclick=async()=>{
+ if(!USB.on){msg('Conecte o USB primeiro');return}
+ const b=$('#cmLer');b.disabled=true;$('#cmDot').style.background='var(--wa)';
+ let modo='normal';try{modo=(await(await fetch('/api/status')).json()).modo}catch(e){}
+ if(modo!=='normal')await cmd('m normal');
+ const linhas=[];
+ for(const[pgn,nome,fmt]of IDP){
+  $('#cmSt').textContent='Lendo '+nome+'…';
+  let r=null;try{r=await j1939Pede(pgn,0xFF,pgn===0xFEE3?6000:1600)}catch(e){}
+  let v='<span class="mu">sem resposta</span>',raw='';
+  if(r&&r.ack!==undefined)v='<span class="mu">o módulo recusou ('+(['ACK','NACK — não suportado','acesso negado','ocupado'][r.ack]||r.ack)+')</span>';
+  else if(r){try{v=fmt(r)}catch(e){v='?'}raw='SA '+hx(r.sa,2)+' · '+r.d.length+' bytes<br><span style="font-family:monospace;font-size:11px">'+r.d.slice(0,48).map(x=>hx(x,2)).join(' ')+(r.d.length>48?' …':'')+'</span>'}
+  linhas.push('<tr><td class="fid">'+hx(pgn,4)+'</td><td class="fname">'+nome+'</td><td class="fval" style="color:var(--tx);font-family:inherit">'+v+'</td><td class="mu">'+raw+'</td></tr>');
+  $('#cmRows').innerHTML=linhas.join('');
+ }
+ if(modo!=='normal')await cmd('m '+modo);
+ $('#cmSt').textContent='Concluído '+new Date().toLocaleTimeString('pt-BR');$('#cmDot').style.background='var(--ok)';b.disabled=false;
+};
+async function cmApaga(pgn,nome){
+ if(!USB.on){msg('Conecte o USB primeiro');return}
+ if(!confirm('Apagar as falhas '+nome+' do motor (SA 00)?'))return;
+ $('#cmDmSt').textContent='Enviando…';
+ let modo='normal';try{modo=(await(await fetch('/api/status')).json()).modo}catch(e){}
+ if(modo!=='normal')await cmd('m normal');
+ const r=await j1939Pede(pgn,0x00,1500);
+ if(modo!=='normal')await cmd('m '+modo);
+ $('#cmDmSt').textContent=r&&r.ack!==undefined?(r.ack===0?'✓ O módulo confirmou (ACK)':'✗ O módulo recusou: '+(['ACK','NACK','acesso negado','ocupado'][r.ack]||r.ack)):'Pedido enviado (sem confirmação do módulo) — confira na aba Falhas';
+}
+$('#cmDm11').onclick=()=>cmApaga(0xFED3,'ATIVAS (DM11)');
+$('#cmDm3').onclick=()=>cmApaga(0xFECC,'INATIVAS (DM3)');
 
 // ===== v1.1: ECU ID =====
 $('#ecuBtn').onclick=async()=>{
