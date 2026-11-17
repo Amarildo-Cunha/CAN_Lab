@@ -153,7 +153,7 @@ table{font-size:13px}
 #serLog{max-height:30vh}.noack b{color:var(--c1)}.noack span{flex:1;line-height:1.5}
 footer{margin:28px 28px 0}
 </style></head><body><div class="wrapx">
-<header><div class="brand">PETTERSON <b>TOOLS</b></div><div class="hrow"><h1>CAN Lab <small>v2.0 · USB</small></h1><button id="bUsb" class="pri">Conectar USB</button><span id="con" class="bdg">desconectado</span><span class="mu" id="info"></span></div></header>
+<header><div class="brand">PETTERSON <b>TOOLS</b></div><div class="hrow"><h1>CAN Lab <small>v2.1 · USB</small></h1><button id="bUsb" class="pri">Conectar USB</button><span id="con" class="bdg">desconectado</span><span class="mu" id="info"></span></div></header>
 <div id="msg">Carregando configuração…</div>
 <div class="semusb" id="semusb"><b>Ligue o ESP32 no cabo USB e clique em "Conectar USB".</b><br>
 Escolha a porta COM do ESP32 (CP210x ou CH340). Feche o Monitor Serial do Arduino IDE antes: só um programa pode usar a porta.<br>
@@ -457,7 +457,7 @@ Escolha a porta COM do ESP32 (CP210x ou CH340). Feche o Monitor Serial do Arduin
 </div>
 <div class="sys-box">
 <h3>Informações</h3>
-<div class="mu">Petterson Tools · PT CAN Lab v2.0 (PT-CAN-01) — ECU › Cummins, parâmetros J1939, 23 mostradores</div>
+<div class="mu">Petterson Tools · PT CAN Lab v2.1 (PT-CAN-01) — ECU › Cummins, parâmetros J1939, mostradores em ordem de prioridade</div>
 <div class="mu">ESP32 + MCP2515 + TJA1050 · J1939 250 kbps</div>
 <div class="mu" id="sysHeap"></div>
 </div>
@@ -633,6 +633,15 @@ const G20=[
  {id:"tEsc",lbl:"TEMP ESCAPE",u:"°C",mn:0,mx:800,d:0,pgn:65270,sb:5,nb:2,le:true,res:0.03125,off:-273,na:65535,her:700,hwa:600},
  {id:"freioMot",lbl:"FREIO MOTOR",u:"%",mn:0,mx:100,d:0,pgn:61440,sb:1,nb:1,le:true,res:1,off:-125,na:255}
 ];
+// v2.1: ordem fixa de prioridade — RPM, temperaturas (água, ar, óleo, combustível),
+// pressões (combustível, rail, óleo, turbo); os demais vêm depois, na ordem em que estão.
+const ORDEM=['rpm','tAgua','tAdm','tOleo','tComb','pComb','pRail','pOleo','pTurb'];
+function cfgOrdena(c){
+ if(!c||!Array.isArray(c.gauges))return false;
+ const antes=c.gauges.map(g=>g.id).join(),pos=id=>{const i=ORDEM.indexOf(id);return i<0?ORDEM.length:i};
+ c.gauges=c.gauges.map((g,i)=>[g,i]).sort((a,b)=>pos(a[0].id)-pos(b[0].id)||a[1]-b[1]).map(x=>x[0]);
+ return c.gauges.map(g=>g.id).join()!==antes;
+}
 function cfgMigra20(c){
  if(!c||!Array.isArray(c.gauges)||c.v20)return false;
  const r=c.gauges.find(g=>g.id==='pRail');
@@ -645,7 +654,8 @@ async function loadConfig(repassa){
   const r=await fetch('/api/config');
   cfgObj=await r.json();
   GD=cfgObj.gauges||[];
-  if(cfgMigra20(cfgObj)){GD=cfgObj.gauges;try{await fetch('/api/config',{method:'POST',body:JSON.stringify(cfgObj)})}catch(e){}}
+  const mig=cfgMigra20(cfgObj),ord=cfgOrdena(cfgObj);
+  if(mig||ord){GD=cfgObj.gauges;try{await fetch('/api/config',{method:'POST',body:JSON.stringify(cfgObj)})}catch(e){}}
   msg('Configuração carregada: '+GD.length+' gauges');
  }catch(e){
   if(repassa)throw e;
@@ -952,6 +962,7 @@ function readEditor(){
 }
 async function saveConfig(){
  cfgObj.gauges=GD;
+ cfgOrdena(cfgObj);GD=cfgObj.gauges;   // v2.1: mantém a ordem de prioridade
  try{await fetch('/api/config',{method:'POST',body:JSON.stringify(cfgObj),headers:{'Content-Type':'application/json'}});
   msg('Configuração salva no ESP32');}catch(e){msg('Erro ao salvar config');}
 }
@@ -965,7 +976,8 @@ $('#ceCancel').onclick=closeEditor;
 $('#cfgAdd').onclick=()=>openEditor(-1);
 $('#cfgReset').onclick=async()=>{
  if(!confirm('Resetar toda a configuração para o padrão de fábrica?'))return;
- try{const r=await fetch('/api/config/reset');cfgObj=await r.json();GD=cfgObj.gauges||[];
+ try{const r=await fetch('/api/config/reset');cfgObj=await r.json();cfgMigra20(cfgObj);cfgOrdena(cfgObj);GD=cfgObj.gauges||[];
+  fetch('/api/config',{method:'POST',body:JSON.stringify(cfgObj)}).catch(()=>{});
   renderCfgList();initGauges();msg('Config resetada para padrão');}catch(e){msg('Erro ao resetar');}
 };
 
