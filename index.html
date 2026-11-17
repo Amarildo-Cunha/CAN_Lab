@@ -153,7 +153,7 @@ table{font-size:13px}
 #serLog{max-height:30vh}.noack b{color:var(--c1)}.noack span{flex:1;line-height:1.5}
 footer{margin:28px 28px 0}
 </style></head><body><div class="wrapx">
-<header><div class="brand">PETTERSON <b>TOOLS</b></div><div class="hrow"><h1>CAN Lab <small>v2.1 · USB</small></h1><button id="bUsb" class="pri">Conectar USB</button><span id="con" class="bdg">desconectado</span><span class="mu" id="info"></span></div></header>
+<header><div class="brand">PETTERSON <b>TOOLS</b></div><div class="hrow"><h1>CAN Lab <small>v2.2 · USB</small></h1><button id="bUsb" class="pri">Conectar USB</button><span id="con" class="bdg">desconectado</span><span class="mu" id="info"></span></div></header>
 <div id="msg">Carregando configuração…</div>
 <div class="semusb" id="semusb"><b>Ligue o ESP32 no cabo USB e clique em "Conectar USB".</b><br>
 Escolha a porta COM do ESP32 (CP210x ou CH340). Feche o Monitor Serial do Arduino IDE antes: só um programa pode usar a porta.<br>
@@ -457,7 +457,7 @@ Escolha a porta COM do ESP32 (CP210x ou CH340). Feche o Monitor Serial do Arduin
 </div>
 <div class="sys-box">
 <h3>Informações</h3>
-<div class="mu">Petterson Tools · PT CAN Lab v2.1 (PT-CAN-01) — ECU › Cummins, parâmetros J1939, mostradores em ordem de prioridade</div>
+<div class="mu">Petterson Tools · PT CAN Lab v2.2 (PT-CAN-01) — ECU › Cummins, parâmetros J1939, mostradores em ordem de prioridade, bateria</div>
 <div class="mu">ESP32 + MCP2515 + TJA1050 · J1939 250 kbps</div>
 <div class="mu" id="sysHeap"></div>
 </div>
@@ -618,10 +618,10 @@ let cfgObj={};  // objeto completo da config
 
 // ===== v2.0: mostradores novos e correção da pressão do rail (feito uma vez, gravado no ESP32) =====
 const G20=[
- {id:"pedal",lbl:"PEDAL ACELERADOR",u:"%",mn:0,mx:100,d:0,pgn:61443,sb:1,nb:1,le:true,res:0.4,off:0,na:255},
+ {id:"pedal",tipo:"pedal",lbl:"PEDAL ACELERADOR",u:"%",mn:0,mx:100,d:0,pgn:61443,sb:1,nb:1,le:true,res:0.4,off:0,na:255},
  {id:"carga",lbl:"CARGA MOTOR",u:"%",mn:0,mx:100,d:0,pgn:61443,sb:2,nb:1,le:true,res:1,off:0,na:255,hwa:90},
  {id:"torque",lbl:"TORQUE REAL",u:"%",mn:0,mx:100,d:0,pgn:61444,sb:2,nb:1,le:true,res:1,off:-125,na:255},
- {id:"tensao",lbl:"TENSÃO BATERIA",u:"V",mn:0,mx:32,d:1,pgn:65271,sb:4,nb:2,le:true,res:0.05,off:0,na:65535},
+ {id:"tensao",tipo:"bateria",lbl:"BATERIA",u:"V",mn:0,mx:32,d:1,pgn:65271,sb:4,nb:2,le:true,res:0.05,off:0,na:65535},
  {id:"veloc",lbl:"VELOCIDADE",u:"km/h",mn:0,mx:140,d:0,pgn:65265,sb:1,nb:2,le:true,res:0.00390625,off:0,na:65535},
  {id:"consumo",lbl:"CONSUMO",u:"L/h",mn:0,mx:80,d:1,pgn:65266,sb:0,nb:2,le:true,res:0.05,off:0,na:65535},
  {id:"nivAgua",lbl:"NÍVEL ÁGUA",u:"%",mn:0,mx:100,d:0,pgn:65263,sb:7,nb:1,le:true,res:0.4,off:0,na:255,ler:40,lwa:60},
@@ -638,9 +638,12 @@ const G20=[
 const ORDEM=['rpm','tAgua','tAdm','tOleo','tComb','pComb','pRail','pOleo','pTurb'];
 function cfgOrdena(c){
  if(!c||!Array.isArray(c.gauges))return false;
+ let mud=false;
+ for(const g of c.gauges){if(g.id==='tensao'&&g.tipo!=='bateria'){g.tipo='bateria';g.lbl='BATERIA';mud=true}
+  if(g.id==='pedal'&&g.tipo!=='pedal'){g.tipo='pedal';mud=true}}   // v2.2
  const antes=c.gauges.map(g=>g.id).join(),pos=id=>{const i=ORDEM.indexOf(id);return i<0?ORDEM.length:i};
  c.gauges=c.gauges.map((g,i)=>[g,i]).sort((a,b)=>pos(a[0].id)-pos(b[0].id)||a[1]-b[1]).map(x=>x[0]);
- return c.gauges.map(g=>g.id).join()!==antes;
+ return mud||c.gauges.map(g=>g.id).join()!==antes;
 }
 function cfgMigra20(c){
  if(!c||!Array.isArray(c.gauges)||c.v20)return false;
@@ -720,6 +723,7 @@ let lastPgn={};   // v1.7: últimos dados por PGN (para detalhes como a chave do
 function gColor(id,v){
  const g=GD.find(x=>x.id===id);
  if(!g)return 'var(--ok)';
+ if(ehBat(g))return batInfo(v).c;   // v2.2
  if(g.her!==undefined&&v>g.her)return 'var(--er)';
  if(g.hwa!==undefined&&v>g.hwa)return 'var(--wa)';
  if(g.ler!==undefined&&v<g.ler)return 'var(--er)';
@@ -729,10 +733,43 @@ function gColor(id,v){
 }
 
 // ===== Init gauges =====
+// v2.2: mostrador de bateria (ícone + tensão). Detecta sistema 12 V ou 24 V pela própria tensão.
+const ehBat=g=>g.tipo==='bateria'||g.id==='tensao';
+function batInfo(v){
+ const k=v>=18?2:1,sis=k===2?'24 V':'12 V',x=v/k;   // x = tensão equivalente de 12 V
+ let c,t;
+ if(x>15.2){c='var(--er)';t='sobretensão'}
+ else if(x>13.2){c='var(--ok)';t='carregando'}
+ else if(x>=12.2){c='var(--ok)';t='normal'}
+ else if(x>=11.6){c='var(--wa)';t='baixa'}
+ else{c='var(--er)';t='descarregada'}
+ return{pct:Math.max(0,Math.min(1,(x-11.4)/(12.7-11.4))),c,t:'sistema '+sis+' · '+t};
+}
+function batSvg(id){
+ return '<svg viewBox="0 0 120 66" class="gs"><rect x="12" y="12" width="88" height="46" rx="7" fill="none" stroke="#3a3a3d" stroke-width="4"/>'+
+  '<rect x="101" y="25" width="9" height="20" rx="2" fill="#3a3a3d"/>'+
+  '<rect id="b_'+id+'" x="19" y="19" width="0" height="32" rx="3" fill="#3a3a3d"/>'+
+  '<path d="M60 22 L50 37 H58 L54 50 L68 32 H60 Z" fill="#000" fill-opacity=".35"/></svg>';
+}
+// v2.2: mostrador do pedal (ícone que inclina conforme a posição + barra)
+const ehPed=g=>g.tipo==='pedal'||g.id==='pedal';
+function pedSvg(id){
+ return '<svg viewBox="0 0 120 66" class="gs"><line x1="22" y1="56" x2="98" y2="56" stroke="#3a3a3d" stroke-width="3" stroke-linecap="round"/>'+
+  '<g id="p_'+id+'" style="transform-origin:60px 54px;transform:rotate(-28deg);transition:transform .25s">'+
+  '<rect x="49" y="6" width="22" height="48" rx="6" fill="#2a2a2d" stroke="#3a3a3d" stroke-width="2"/>'+
+  '<g id="pf_'+id+'" fill="#3a3a3d"><rect x="53" y="12" width="14" height="4" rx="2"/><rect x="53" y="20" width="14" height="4" rx="2"/><rect x="53" y="28" width="14" height="4" rx="2"/><rect x="53" y="36" width="14" height="4" rx="2"/><rect x="53" y="44" width="14" height="4" rx="2"/></g></g>'+
+  '<circle cx="60" cy="54" r="4" fill="#3a3a3d"/>'+
+  '<rect x="22" y="61" width="76" height="4" rx="2" fill="#2a2a2d"/><rect id="pb_'+id+'" x="22" y="61" width="0" height="4" rx="2" fill="#3a3a3d"/></svg>';
+}
+const corVar=c=>c.startsWith('var')?getComputedStyle(document.documentElement).getPropertyValue(c.slice(4,-1)).trim():c;
 function initGauges(){
  let h='';
  for(const g of GD)
-  h+='<div class="gc"><div class="gl">'+g.lbl+'</div>'+
+  if(ehPed(g))h+='<div class="gc"><div class="gl">'+g.lbl+'</div>'+pedSvg(g.id)+
+   '<div class="gv" id="v_'+g.id+'">—</div><div class="gu">'+g.u+'</div><div class="gx" id="x_'+g.id+'"></div></div>';
+  else if(ehBat(g))h+='<div class="gc"><div class="gl">'+g.lbl+'</div>'+batSvg(g.id)+
+   '<div class="gv" id="v_'+g.id+'">—</div><div class="gu">'+g.u+'</div><div class="gx" id="x_'+g.id+'"></div></div>';
+  else h+='<div class="gc"><div class="gl">'+g.lbl+'</div>'+
    '<svg viewBox="0 0 120 66" class="gs"><path d="M10,62 A50,50 0 0,1 110,62" fill="none" stroke="#2a2a2d" stroke-width="8" stroke-linecap="round"/>'+
    '<path id="a_'+g.id+'" d="M10,62 A50,50 0 0,1 110,62" fill="none" stroke="#3a3a3d" stroke-width="8" stroke-linecap="round" stroke-dasharray="'+AL+'" stroke-dashoffset="'+AL+'"/></svg>'+
    '<div class="gv" id="v_'+g.id+'">—</div><div class="gu">'+g.u+'</div><div class="gx" id="x_'+g.id+'"></div></div>';
@@ -753,6 +790,35 @@ function updGauges(vals){
  for(const g of GD){
   const el=$('#v_'+g.id),arc=$('#a_'+g.id);
   const v=vals[g.id];
+  if(ehPed(g)){   // v2.2: pedal
+   const pg=$('#p_'+g.id),pf=$('#pf_'+g.id),pb=$('#pb_'+g.id);
+   const tem=v!==undefined&&v!==null,er=tem&&Number.isNaN(v);
+   if(tem)any=true;
+   if(tem)gExtra(g);
+   if(!tem||er){
+    if(el){el.textContent=er?'ERRO':'—';el.style.color=er?'var(--er)':''}
+    if(pg)pg.style.transform='rotate(-28deg)';if(pf)pf.setAttribute('fill',er?corVar('var(--er)'):'#3a3a3d');if(pb)pb.setAttribute('width',0);
+    continue;
+   }
+   const pct=Math.max(0,Math.min(1,v/100)),c=corVar(gColor(g.id,v));
+   if(el){el.textContent=v.toFixed(0);el.style.color=gColor(g.id,v)}
+   if(pg)pg.style.transform='rotate('+(-28+40*pct).toFixed(1)+'deg)';   // solto inclinado → pisado deitado
+   if(pf)pf.setAttribute('fill',c);if(pb){pb.setAttribute('width',(76*pct).toFixed(1));pb.setAttribute('fill',c)}
+   continue;
+  }
+  if(ehBat(g)){   // v2.2: bateria
+   const bar=$('#b_'+g.id),x=$('#x_'+g.id);
+   if(v===undefined||v===null||Number.isNaN(v)){
+    if(el){el.textContent=Number.isNaN(v)?'ERRO':'—';el.style.color=Number.isNaN(v)?'var(--er)':''}
+    if(bar){bar.setAttribute('width',0)}if(x)x.textContent='';
+    if(v!==undefined&&v!==null)any=true;continue;
+   }
+   any=true;const b=batInfo(v);
+   if(el){el.textContent=v.toFixed(1);el.style.color=b.c}
+   if(bar){bar.setAttribute('width',(74*b.pct).toFixed(1));bar.setAttribute('fill',corVar(b.c))}
+   if(x){x.textContent=b.t;x.className='gx'}
+   continue;
+  }
   if(v===undefined||v===null){
    if(el)el.textContent='—';
    if(arc){arc.style.strokeDashoffset=AL;arc.style.stroke='#3a3a3d';}
