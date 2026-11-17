@@ -1,0 +1,1200 @@
+<!doctype html>
+<html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#000000">
+<title>PT CAN Lab — Petterson Tools</title>
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icon-192.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#000000;--pn:#161618;--ln:#2a2a2d;--tx:#ffffff;--mu:#a0a0a5;--c1:#ffff00;--c1h:#fff2a8;--ink:#000000;--ok:#36c96e;--wa:#ff9f1a;--er:#ff5a5a;--bl:#4da3ff;--in:#0b0b0c}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--tx);font:14px/1.4 Inter,system-ui,"Segoe UI",Roboto,sans-serif;padding-bottom:12px}
+header{position:sticky;top:0;z-index:5;background:#0b0b0cf2;padding:10px 16px;border-bottom:1px solid var(--ln);backdrop-filter:blur(10px)}
+.brand,.ft-brand{font-family:"Bebas Neue",Impact,"Arial Narrow",sans-serif;letter-spacing:1.5px;color:var(--mu)}
+.brand{font-size:14px;margin-bottom:2px}.brand b,.ft-brand b{color:var(--c1);font-weight:400}
+.hrow{display:flex;flex-wrap:wrap;align-items:center;gap:10px}
+h1{font-size:18px;margin:0;font-weight:700}h1 small{font-size:12px;color:var(--mu);font-weight:400}
+footer{text-align:center;padding:24px 14px 12px;border-top:1px solid var(--ln);margin:24px 16px 0}
+.ft-brand{font-size:20px}.ft-info{font-size:12px;color:var(--mu);margin-top:6px;line-height:1.6}
+footer a{color:var(--c1);text-decoration:none}footer a:hover{color:var(--c1h)}
+#msg{padding:6px 16px;font-size:12px;color:var(--mu);border-bottom:1px solid var(--ln);min-height:28px;font-family:ui-monospace,Consolas,monospace}
+.card{background:var(--pn);border:1px solid var(--ln);border-top:3px solid var(--c1);border-radius:8px;padding:12px;margin:12px 16px}
+.ttl{display:flex;justify-content:space-between;align-items:center}
+.nm{font-weight:700;font-size:16px;color:var(--c1)}
+.bdg{padding:3px 9px;border-radius:99px;font-size:12px;font-weight:600;background:#2a2a2d;color:var(--mu)}
+.bdg.ok{background:#173a26;color:var(--ok)}.bdg.wa{background:#3a2a0e;color:var(--wa)}.bdg.er{background:#3d1b1b;color:var(--er)}
+.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin:10px 0}
+.st b{display:block;font-size:19px;font-variant-numeric:tabular-nums}
+.st span{font-size:11px;color:var(--mu)}
+.row{display:flex;gap:6px;flex-wrap:wrap;align-items:center}
+.ex{margin-top:8px;font-size:12px;color:var(--mu);font-family:ui-monospace,Consolas,monospace}
+select,input,button{background:var(--in);color:var(--tx);border:1px solid var(--ln);border-radius:5px;padding:6px 9px;font:inherit;font-size:13px}
+button{cursor:pointer;background:#2a2a2d;font-weight:600}
+button:hover{border-color:var(--c1)}button:active{filter:brightness(1.3)}
+button.pri{background:var(--c1);color:var(--ink);border-color:var(--c1);font-weight:700}
+input:focus,select:focus{outline:none;border-color:var(--c1)}input[type=range],input[type=checkbox]{accent-color:var(--c1)}
+.tabs{display:flex;gap:2px;padding:0 16px;border-bottom:1px solid var(--ln);overflow-x:auto}
+.tab{border:0;border-bottom:2px solid transparent;border-radius:0;background:none;padding:9px 12px;color:var(--mu);white-space:nowrap;font-size:13px}
+.tab.on{color:var(--c1);border-bottom-color:var(--c1);font-weight:600}.tab:hover{color:var(--tx);border-color:transparent}.tab.on:hover{border-bottom-color:var(--c1)}
+.pg{display:none;padding:12px 16px}.pg.on{display:block}
+.wrap{max-height:62vh;overflow:auto;border:1px solid var(--ln);border-radius:8px}
+table{width:100%;border-collapse:collapse;font:12px/1.4 ui-monospace,Consolas,monospace}
+th,td{padding:3px 7px;text-align:left;border-bottom:1px solid #1e1e21;white-space:nowrap}
+th{color:var(--mu);font-weight:500;position:sticky;top:0;background:#111113}
+tr.old{opacity:.4}
+.chg{background:#4a4a00;color:#ffff8a;border-radius:3px;padding:0 1px}
+pre{background:var(--in);border:1px solid var(--ln);border-radius:8px;padding:10px;max-height:55vh;overflow:auto;font:12px/1.45 ui-monospace,Consolas,monospace;white-space:pre-wrap;margin:10px 0 0}
+.mu{color:var(--mu)}.warn{color:var(--wa);font-size:13px}
+p{margin:8px 0}
+.dash{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.gc{background:var(--pn);border:1px solid var(--ln);border-radius:8px;padding:10px 8px 8px;text-align:center}
+.gl{font-size:10px;color:var(--mu);text-transform:uppercase;letter-spacing:.5px;margin-bottom:2px}
+.gs{display:block;width:100%;max-width:130px;margin:0 auto}
+.gs path:last-child{transition:stroke-dashoffset .5s,stroke .5s}
+.gv{font-size:28px;font-weight:700;margin-top:-4px;font-variant-numeric:tabular-nums;line-height:1.1;transition:color .5s}
+.gu{font-size:11px;color:var(--mu)}
+.dwait{text-align:center;padding:30px;color:var(--mu)}
+.sc{background:var(--pn);border:1px solid var(--ln);border-radius:8px;padding:14px 16px}
+.sh{color:var(--c1);font-weight:700;font-size:14px;margin-bottom:10px;display:flex;align-items:center;gap:8px}
+.sh .dot{width:8px;height:8px;border-radius:50%;background:var(--ok);display:inline-block}
+.sr{display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px dotted #2a2a2d;font:13px/1.5 ui-monospace,Consolas,monospace}
+.sr:last-child{border:0}
+.sl{color:var(--mu)}
+.sv{font-weight:700;font-variant-numeric:tabular-nums;transition:color .5s}
+.sfooter{margin-top:10px;padding-top:8px;border-top:1px solid var(--ln);font-size:12px;color:var(--mu);text-align:center}
+.lamps{display:flex;gap:12px;flex-wrap:wrap;margin:8px 0 12px}
+.lamp{display:flex;align-items:center;gap:6px;padding:6px 14px;border-radius:8px;background:#111113;border:1px solid var(--ln);font-size:13px;font-weight:600}
+.lamp .dot{width:12px;height:12px;border-radius:50%;border:2px solid #333}
+.lamp.on .dot{border-color:transparent;box-shadow:0 0 8px 2px currentColor}
+.lamp.mil .dot{background:#ff5a5a;color:#ff5a5a}.lamp.mil{color:#ff5a5a}
+.lamp.stp .dot{background:#ff3333;color:#ff3333}.lamp.stp{color:#ff3333}
+.lamp.amb .dot{background:#ff9f1a;color:#ff9f1a}.lamp.amb{color:#ff9f1a}
+.lamp.prt .dot{background:#4da3ff;color:#4da3ff}.lamp.prt{color:#4da3ff}
+.lamp:not(.on){color:var(--mu)}.lamp:not(.on) .dot{background:#2a2a2d}
+.dtc-none{text-align:center;padding:24px;color:var(--ok);font-size:15px;font-weight:600}
+.dtc-none.wait{color:var(--mu);font-weight:400}
+.dtc-badge{display:inline-block;padding:1px 8px;border-radius:4px;font-size:11px;font-weight:600}
+.dtc-badge.ativa{background:#3d1b1b;color:var(--er)}
+.dtc-badge.inativa{background:#13243a;color:var(--bl)}
+/* v0.9: config editor + system */
+.cfg-card{background:var(--pn);border:1px solid var(--ln);border-radius:8px;padding:14px;margin:8px 0}
+.cfg-card h3{margin:0 0 8px;font-size:14px;color:var(--c1)}
+.cfg-grid{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+.cfg-grid label{font-size:12px;color:var(--mu);display:flex;flex-direction:column;gap:2px}
+.cfg-grid input,.cfg-grid select{width:100%;padding:5px 7px;font-size:12px}
+.cfg-list{display:flex;flex-direction:column;gap:4px;margin:8px 0}
+.cfg-item{display:flex;align-items:center;gap:8px;padding:8px 12px;background:#111113;border:1px solid var(--ln);border-radius:8px;cursor:pointer}
+.cfg-item:hover{border-color:var(--c1)}
+.cfg-item .ci-lbl{flex:1;font-weight:600;font-size:13px}
+.cfg-item .ci-info{font-size:11px;color:var(--mu)}
+.cfg-item .ci-del{color:var(--er);cursor:pointer;padding:2px 6px;border-radius:4px;font-size:16px}
+.cfg-item .ci-del:hover{background:#3d1b1b}
+.sys-box{background:var(--pn);border:1px solid var(--ln);border-radius:8px;padding:14px;margin:8px 0}
+.sys-box h3{margin:0 0 10px;font-size:14px;color:var(--c1)}
+.prog{height:6px;background:#2a2a2d;border-radius:3px;margin:8px 0;overflow:hidden}
+.prog-bar{height:100%;background:var(--c1);width:0%;transition:width .3s}
+.btn-danger{background:#3d1b1b;color:var(--er);border-color:#5a2020}
+.btn-danger:hover{background:#4d1f1f;border-color:var(--er)}
+.btn-ok{background:#173a26;color:var(--ok);border-color:#1a5535}
+.ecu-tbl{width:100%;border-collapse:collapse;font-size:13px}
+.ecu-tbl th{background:#111113;color:var(--c1);padding:8px 10px;text-align:left;border-bottom:2px solid var(--c1);font-size:11px;text-transform:uppercase;letter-spacing:1px}
+.ecu-tbl td{padding:6px 10px;border-bottom:1px solid #1e1e21}
+.ecu-tbl tr:hover{background:#1c1c1f}
+.ecu-tbl .fid{color:var(--bl);font-family:monospace;font-weight:bold}
+.ecu-tbl .fval{color:var(--c1);font-family:monospace}
+.ecu-tbl .fname{color:var(--mu)}
+.crumb{display:flex;gap:6px;align-items:center;font-size:13px;margin:0 0 10px;color:var(--mu)}
+.crumb a{color:var(--c1);cursor:pointer;text-decoration:none}.crumb a:hover{text-decoration:underline}
+.mgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:10px;margin-top:6px}
+.mcard{background:var(--pn);border:1px solid var(--ln);border-left:3px solid var(--c1);border-radius:8px;padding:14px;cursor:pointer;text-align:left}
+.mcard:hover{border-color:var(--c1)}
+.mcard b{display:block;font-size:16px;margin-bottom:4px;color:var(--tx)}
+.mcard span{font-size:12px;color:var(--mu)}
+.mcard.off{opacity:.45;cursor:default;border-left-color:var(--ln)}
+.mcard .soon{display:inline-block;margin-top:6px;font-size:11px;padding:1px 7px;border-radius:99px;background:#2a2a2d;color:var(--mu)}
+/* v1.7: layout para computador */
+body{min-width:1100px;font-size:14px}
+.wrapx{max-width:1600px;margin:0 auto}
+header{display:flex;align-items:center;gap:22px;padding:12px 28px}
+header .brand{font-size:22px;margin:0}
+header .hrow{flex:1}
+h1{font-size:20px}
+#msg{padding:6px 28px}
+.card{margin:14px 28px;padding:14px 18px;display:grid;grid-template-columns:auto 1fr auto;align-items:center;gap:6px 32px}
+.card .ttl{gap:12px;justify-content:flex-start}
+.card .stats{margin:0;gap:24px}
+.card .st b{font-size:24px}
+.card .ex{grid-column:1/-1;margin-top:2px}
+.tabs{padding:0 28px;gap:4px}
+.tab{font-size:14px;padding:11px 16px}
+.pg{padding:16px 28px}
+.dash{grid-template-columns:repeat(5,1fr);gap:14px}
+.gc{padding:14px 10px 12px}
+.gl{font-size:12px}
+.gs{max-width:180px}
+.gv{font-size:34px}
+.gu{font-size:12px}
+.gx{font-size:12px;color:var(--mu);margin-top:4px;min-height:16px}
+.gx.ok{color:var(--ok)}.gx.wa{color:var(--wa)}.gx.er{color:var(--er)}
+.wrap{max-height:68vh}
+table{font-size:13px}
+.noack{display:none;margin:0 28px 14px;padding:12px 16px;border-radius:8px;background:#1a1a00;border:1px solid #4a4a00;color:var(--c1h);align-items:center;gap:16px}
+.noack.show{display:flex}
+#bUsb{min-width:150px}
+.semusb{margin:14px 28px;padding:16px 18px;border-radius:8px;background:var(--pn);border:1px solid var(--ln);border-left:3px solid var(--c1);line-height:1.6}
+.semusb b{color:var(--c1)}
+.semusb.hide{display:none}
+#serLog{max-height:30vh}.noack b{color:var(--c1)}.noack span{flex:1;line-height:1.5}
+footer{margin:28px 28px 0}
+</style></head><body><div class="wrapx">
+<header><div class="brand">PETTERSON <b>TOOLS</b></div><div class="hrow"><h1>CAN Lab <small>v1.8 · USB</small></h1><button id="bUsb" class="pri">Conectar USB</button><span id="con" class="bdg">desconectado</span><span class="mu" id="info"></span></div></header>
+<div id="msg">Carregando configuração…</div>
+<div class="semusb" id="semusb"><b>Ligue o ESP32 no cabo USB e clique em "Conectar USB".</b><br>
+Escolha a porta COM do ESP32 (CP210x ou CH340). Feche o Monitor Serial do Arduino IDE antes: só um programa pode usar a porta.<br>
+<span class="mu">Funciona no Chrome ou Edge do computador. Firmware: CAN_Lab_USB v1.8 ou mais novo (921600 baud).</span></div>
+<div class="card" id="crd"></div>
+<div class="noack" id="noack"><span>⚠️ <b>Módulo sem ACK.</b> O mesmo frame está se repetindo sem parar porque ninguém confirma o recebimento. Com um módulo sozinho na bancada, use o modo <b>Normal</b>.</span><button class="pri" id="bNoAck">Mudar para Normal</button></div>
+<nav class="tabs">
+<button class="tab on" data-p="dash">Dashboard</button><button class="tab" data-p="mrc">ECU</button><button class="tab" data-p="scan">Scanner</button>
+<button class="tab" data-p="dtc">Falhas</button>
+<button class="tab" data-p="vivo">Ao vivo</button><button class="tab" data-p="ids">IDs</button>
+<button class="tab" data-p="devs">Dispositivos</button>
+<button class="tab" data-p="tst">Testes</button><button class="tab" data-p="tx">Transmitir</button>
+<button class="tab" data-p="cap">Captura</button>
+<button class="tab" data-p="cfg">Configurar</button><button class="tab" data-p="sys">Sistema</button>
+</nav>
+
+<section class="pg on" id="dash">
+<div class="dash" id="gauges"></div>
+<div class="dwait" id="dwait">Aguardando dados J1939…</div>
+</section>
+
+<section class="pg" id="scan">
+<div class="sc">
+<div class="sh"><span class="dot" id="scDot"></span><span id="scDev">Aguardando dados…</span></div>
+<div id="scRows"></div>
+<div class="sfooter" id="scFoot">—</div>
+</div>
+</section>
+
+<section class="pg" id="dtc">
+<div class="sc">
+<div class="sh"><span class="dot" id="dtcDot"></span><span id="dtcTitle">Aguardando DM1…</span></div>
+<div class="lamps" id="lamps">
+<div class="lamp mil" id="lMil"><span class="dot"></span>MIL</div>
+<div class="lamp stp" id="lStp"><span class="dot"></span>STOP</div>
+<div class="lamp amb" id="lAmb"><span class="dot"></span>AMBER</div>
+<div class="lamp prt" id="lPrt"><span class="dot"></span>PROTECT</div>
+</div>
+<div id="dtcNone" class="dtc-none wait">Aguardando mensagens DM1/DM2…</div>
+<div class="wrap" style="display:none" id="dtcWrap"><table><thead><tr><th>Tipo</th><th>SPN</th><th>FMI</th><th>Descrição FMI</th><th>SA</th><th>OC</th><th>Visto</th><th>Último</th></tr></thead><tbody id="dtcT"></tbody></table></div>
+<div class="sfooter" id="dtcFoot">DM1 = falhas ativas · DM2 = falhas inativas · OC = contador de ocorrências da ECU</div>
+</div>
+</section>
+
+<section class="pg" id="vivo">
+<div class="row" style="margin-bottom:8px">
+<button id="bPause">Pausar</button><button id="bClr">Limpar</button>
+<input id="fId" placeholder="Filtro ID ou PGN (ex.: 7E8, FEF1)" size="26">
+<button id="bCsv">Exportar CSV</button><span class="mu" id="vInfo"></span>
+</div>
+<div class="wrap" id="logW"><table><thead><tr><th>Tempo s</th><th>ID</th><th>Tipo</th><th>PGN / origem</th><th>DLC</th><th>Dados</th></tr></thead><tbody id="log"></tbody></table></div>
+</section>
+
+<section class="pg" id="ids">
+<div class="row" style="margin-bottom:8px"><span class="mu" id="idsN"></span><span class="mu">· bytes em amarelo mudaram · clique numa linha para filtrar</span></div>
+<div class="wrap"><table><thead><tr><th>ID</th><th>Tipo</th><th>PGN / origem</th><th>Qtd</th><th>Período ms</th><th>DLC</th><th>Dados</th><th>Último</th></tr></thead><tbody id="idT"></tbody></table></div>
+</section>
+
+<section class="pg" id="devs">
+<div class="row" style="margin-bottom:8px"><span class="mu" id="devN">Nenhum dispositivo detectado via Address Claim</span></div>
+<div class="wrap"><table><thead><tr><th>SA</th><th>Módulo</th><th>Fabricante</th><th>NAME (hex)</th><th>Primeiro</th><th>Último</th><th>Qtd</th></tr></thead><tbody id="devT"></tbody></table></div>
+<p class="mu" style="padding:0 4px">Dispositivos são detectados pelo PGN EE00 (Address Claim). Use modo Normal se o módulo estiver sozinho na rede.</p>
+</section>
+
+<section class="pg" id="tst">
+<div class="row">
+<button data-c="d">Diagnóstico SPI</button>
+<button data-c="t">Loopback</button>
+<button data-c="a">Auto-baud</button>
+<button data-c="e">Ler erros</button>
+<button data-c="st">Status</button>
+<button data-c="clr">Zerar contadores</button>
+<select id="xt"><option value="8">Cristal 8 MHz</option><option value="16">Cristal 16 MHz</option></select>
+</div>
+<p class="mu">Ordem: loopback → veículo.</p>
+<pre id="cons"></pre>
+</section>
+
+<section class="pg" id="tx">
+<div class="row">
+<input id="tI" placeholder="ID hex (7DF ou 18EAFFF9)" size="20">
+<input id="tD" placeholder="dados hex (02 01 00 00 00 00 00 00)" size="34">
+<button id="tB">Enviar</button>
+</div>
+<p class="warn">Enviar tira o canal do modo só escuta por ~1 s.</p>
+<div class="row"><span class="mu">Exemplos:</span>
+<button data-tx="7DF|02 01 00 00 00 00 00 00">OBD-II: PIDs suportados</button>
+<button data-tx="7DF|02 01 0C 00 00 00 00 00">OBD-II: rotação</button>
+<button data-tx="18EAFFF9|EC FE 00">J1939: pedir VIN</button>
+<button data-tx="18EAFFF9|CB FE 00">J1939: pedir DM2</button>
+</div>
+</section>
+
+<!-- v1.0: Captura de tráfego CAN -->
+<section class="pg" id="cap">
+<div class="sc">
+<div class="sh"><span class="dot" id="capDot" style="background:var(--mu)"></span><span id="capTitle">Captura de Tráfego CAN</span></div>
+<p class="mu">Grave todo o tráfego CAN para análise de protocolo e engenharia reversa. Conecte o software de diagnóstico (XCOM, INSITE, etc.) e capture a comunicação.</p>
+<div class="row" style="margin:10px 0;gap:10px">
+<button id="capStart" class="btn-ok" style="font-size:15px;padding:10px 24px">▶ Iniciar Captura</button>
+<button id="capStop" class="btn-danger" style="font-size:15px;padding:10px 24px;display:none">⏹ Parar Captura</button>
+<button id="capCsv" style="font-size:15px;padding:10px 24px;display:none">⬇ Baixar CSV</button>
+</div>
+<div style="display:flex;gap:24px;flex-wrap:wrap;margin:10px 0">
+<div class="st"><b id="capTime" style="font-size:28px;color:var(--c1)">00:00</b><span>tempo</span></div>
+<div class="st"><b id="capCount" style="font-size:28px;color:var(--ok)">0</b><span>frames</span></div>
+<div class="st"><b id="capFps" style="font-size:28px">0</b><span>frames/s</span></div>
+<div class="st"><b id="capLost" style="font-size:28px;color:var(--er)">0</b><span>perdidos</span></div>
+</div>
+<div id="capPreview" style="display:none;margin-top:10px">
+<div class="mu" style="margin-bottom:4px">Últimos frames capturados:</div>
+<div class="wrap" style="max-height:40vh"><table><thead><tr><th>ms</th><th>ID</th><th>PGN</th><th>SA</th><th>DLC</th><th>Dados</th></tr></thead><tbody id="capLog"></tbody></table></div>
+</div>
+</div>
+</section>
+
+<!-- v1.3: Menu ECU por marca -->
+<section class="pg" id="mrc">
+<div id="mrcHome">
+<div class="crumb"><b style="color:var(--tx)">ECU</b></div>
+<p class="mu">Escolha a marca do equipamento. Cada marca reúne as funções específicas dela.</p>
+<div class="mgrid">
+<button class="mcard" data-brand="scania"><b>Scania</b><span>EMS S6/S7/S8 · painel ICL · coordenador COO</span></button>
+<div class="mcard off"><b>Outras marcas</b><span>Entram aqui conforme formos criando as funções</span></div>
+</div>
+</div>
+<div id="mrcScania" style="display:none">
+<div class="crumb"><a data-crumb="home">ECU</a> › <b style="color:var(--tx)">Scania</b></div>
+<div class="mgrid">
+<button class="mcard" data-go="ecu"><b>Identificação</b><span>ECU ID do motor via diagnóstico Scania (SID 1A), estilo XCOM</span></button>
+<div class="mcard off"><b>Leitura de falhas</b><span>Ler e apagar falhas por diagnóstico Scania (KWP/UDS)</span><span class="soon">em desenvolvimento</span><br><span>Falhas J1939 (DM1/DM2) continuam na aba Falhas</span></div>
+<button class="mcard" data-go="sim"><b>Painel</b><span>Simulação J1939 para testar o painel na bancada, espias FD7D</span></button>
+<button class="mcard" data-go="kwp"><b>Medição (KWP)</b><span>Variáveis da EMS S6 via KWP2000 21 F0, igual ao XCOM · pedido livre KWP/UDS</span></button>
+<div class="mcard off"><b>Testes</b><span>Teste de lâmpadas e ponteiros do painel</span><span class="soon">aguardando captura do SDP3</span></div>
+</div>
+</div>
+</section>
+
+<!-- v1.1: ECU ID — Identificação da ECU via UDS (estilo XCOM Scania) -->
+<section class="pg" id="ecu">
+<div class="crumb"><a data-crumb="home">ECU</a> › <a data-crumb="scania">Scania</a> › <b style="color:var(--tx)">Identificação</b></div>
+<div class="sc">
+<div class="sh"><span class="dot" id="ecuDot" style="background:var(--mu)"></span><span id="ecuTitle">Identificação da ECU — Scania</span></div>
+<p class="mu">Lê a identificação completa da ECU via protocolo UDS (SID 1A). Compatível com Scania EMS S6, S7 e S8. A ECU precisa estar conectada e respondendo na rede CAN a 250 kbps.</p>
+<div class="row" style="margin:10px 0;gap:10px">
+<button id="ecuBtn" class="btn-ok" style="font-size:15px;padding:10px 24px">🔍 Ler ECU ID</button>
+<span class="mu" id="ecuStatus"></span>
+</div>
+<div id="ecuResult" style="display:none;margin-top:10px">
+<div class="wrap"><table class="ecu-tbl"><thead><tr><th style="width:45px">ID</th><th style="width:45%">Nome</th><th>Valor</th></tr></thead><tbody id="ecuRows"></tbody></table></div>
+</div>
+</div>
+</section>
+
+
+<!-- v1.4: Medição EMS S6 via KWP2000 (LocalId F0) + pedido livre -->
+<section class="pg" id="kwp">
+<div class="crumb"><a data-crumb="home">ECU</a> › <a data-crumb="scania">Scania</a> › <b style="color:var(--tx)">Medição (KWP)</b></div>
+<div class="sc">
+<div class="sh"><span class="dot" id="kwpDot" style="background:var(--mu)"></span><span>Medição EMS S6 — KWP2000 21 F0</span></div>
+<p class="mu">Lê o LocalId F0 do mesmo jeito que o XCOM (ferramenta SA F9 → motor SA 00). O F0 é montado pelo XCOM com as variáveis marcadas na tela Measurement; a tabela abaixo segue o layout capturado em 13/11. Se a ECU foi desligada ou a seleção mudou, a ECU responde com erro ou outro layout — aí use o pedido livre para mandar o 2C capturado.</p>
+<div class="row" style="margin:10px 0;gap:8px;flex-wrap:wrap;align-items:center">
+<button id="kwpOpenB">Abrir comunicação</button>
+<label class="mu" style="display:flex;gap:4px;align-items:center"><input type="checkbox" id="kwpSes"> mandar 10 81 ao abrir</label>
+<button id="kwpRd" class="btn-ok">Ler 21 F0</button>
+<button id="kwpLp">▶ Contínuo 4 Hz</button>
+<button id="kwpCloseB">Fechar</button>
+<span class="mu" id="kwpSt"></span>
+</div>
+<div class="wrap"><table class="ecu-tbl"><thead><tr><th style="width:55px">ID</th><th style="width:42%">Variável</th><th>Valor</th><th style="width:90px">Bytes</th></tr></thead><tbody id="kwpRows"><tr><td colspan="4" class="mu">Clique em "Ler 21 F0"</td></tr></tbody></table></div>
+</div>
+<div class="sc" style="margin-top:12px">
+<div class="sh"><span>Pedido livre KWP2000 / UDS</span></div>
+<p class="mu">Bytes do serviço em hex, sem o PCI (o tamanho e o multi-frame são montados sozinhos). Ex.: <code>21 F0</code> · <code>1A 80</code> · <code>3E 01</code> · o <code>2C …</code> capturado do XCOM. A comunicação abre sozinha (canal em NORMAL) e fecha no botão Fechar ou após 5 min parada.</p>
+<div class="row" style="gap:8px"><input id="kwpReq" style="flex:1;font-family:monospace" placeholder="21 F0"><button id="kwpSend" class="btn-ok">Enviar</button></div>
+<pre id="kwpLog" style="max-height:280px;overflow:auto;margin-top:8px;font-size:12px;white-space:pre-wrap"></pre>
+</div>
+</section>
+
+<!-- v1.2: Teste de painel (simulação J1939) -->
+<section class="pg" id="sim">
+<div class="crumb"><a data-crumb="home">ECU</a> › <a data-crumb="scania">Scania</a> › <b style="color:var(--tx)">Painel</b></div>
+<div class="sys-box">
+<h3>Teste de painel — simulação J1939</h3>
+<p class="mu">Transmite motor (SA 00), tacógrafo (SA EE), câmbio (SA 03) e nível de combustível para alimentar o painel na bancada. <b class="warn">Só use em bancada</b>: ao ligar, o canal entra em modo NORMAL e transmite.</p>
+<div class="row" style="gap:10px">
+<button id="simOn" class="btn-ok" style="font-size:15px;padding:10px 20px">▶ Ligar simulação</button>
+<button id="simOff" class="btn-danger" style="font-size:15px;padding:10px 20px">⏹ Parar</button>
+<button id="simEng1">Motor ligado</button><button id="simEng0">Motor desligado</button>
+<button id="simSw">Varredura ponteiros</button>
+<span id="simSt" class="bdg">parada</span>
+</div>
+<div class="mu" id="simInfo" style="margin-top:6px"></div>
+</div>
+<div class="dash" style="grid-template-columns:repeat(auto-fit,minmax(300px,1fr))">
+<div class="sys-box"><h3>Motor</h3><div id="simG1"></div></div>
+<div class="sys-box"><h3>Temperaturas e pressões</h3><div id="simG2"></div></div>
+<div class="sys-box"><h3>Veículo</h3><div id="simG3"></div>
+<label class="row"><input type="checkbox" id="sim_park">Freio de estacionamento (CCVS)</label>
+<label class="row"><input type="checkbox" id="sim_dmAmber">DM1 motor: lâmpada amarela</label>
+<label class="row"><input type="checkbox" id="sim_dmRed">DM1 motor: lâmpada vermelha</label>
+<p class="mu">O DM1 só sai com a mensagem "DM1 motor" marcada abaixo.</p></div>
+</div>
+<div class="sys-box"><h3>Mensagens transmitidas</h3>
+<div class="wrap"><table><thead><tr><th></th><th>Mensagem</th><th>PGN</th><th>SA (hex)</th><th>Período ms</th></tr></thead><tbody id="simMt"></tbody></table></div>
+<p class="mu">Se um ponteiro não reagir, desligue/ligue mensagens ou troque o SA (ex.: combustível — teste 27, 21, 00, 17). AIR1 usa o mesmo ID do ABS (18FEAE30): desconecte o ABS antes de ativar.</p></div>
+<div class="sys-box"><h3>Espias do painel (PGN FD7D)</h3><div id="simTt" class="mu">Aguardando FD7D do painel…</div></div>
+<div class="sys-box"><h3>Recebido dos outros módulos</h3>
+<div class="wrap"><table><thead><tr><th>ID</th><th>SA</th><th>PGN</th><th>Dados</th><th>Período</th></tr></thead><tbody id="simRx"></tbody></table></div></div>
+</section>
+
+<!-- v0.9: Configurar gauges -->
+<section class="pg" id="cfg">
+<p class="mu">Gerencie os gauges do Dashboard e Scanner. Alterações ficam salvas no ESP32.</p>
+<div class="cfg-list" id="cfgList"></div>
+<div class="row" style="margin:10px 0">
+<button id="cfgAdd" class="btn-ok">+ Adicionar Gauge</button>
+<button id="cfgReset" class="btn-danger">Resetar padrão</button>
+</div>
+<div id="cfgEdit" style="display:none">
+<div class="cfg-card">
+<h3 id="cfgEditTitle">Novo Gauge</h3>
+<div class="cfg-grid">
+<label>ID (único)<input id="ce_id" placeholder="ex: rpm"></label>
+<label>Label<input id="ce_lbl" placeholder="ex: ROTAÇÃO"></label>
+<label>Unidade<input id="ce_u" placeholder="ex: rpm, °C, bar"></label>
+<label>Decimais<input id="ce_d" type="number" min="0" max="4" value="0"></label>
+<label>Mín display<input id="ce_mn" type="number" value="0"></label>
+<label>Máx display<input id="ce_mx" type="number" value="100"></label>
+<label>PGN (decimal)<input id="ce_pgn" type="number" placeholder="ex: 61444"></label>
+<label>Byte início (0-7)<input id="ce_sb" type="number" min="0" max="7" value="0"></label>
+<label>Nº bytes (1 ou 2)<select id="ce_nb"><option value="1">1</option><option value="2">2</option></select></label>
+<label>Little Endian<select id="ce_le"><option value="true">Sim</option><option value="false">Não</option></select></label>
+<label>Resolução (×)<input id="ce_res" type="number" step="any" value="1"></label>
+<label>Offset (+)<input id="ce_off" type="number" step="any" value="0"></label>
+<label>Valor N/A<input id="ce_na" type="number" value="255"></label>
+<label>Alarme alto (verm.)<input id="ce_her" type="number" step="any" placeholder="vazio=sem"></label>
+<label>Aviso alto (amar.)<input id="ce_hwa" type="number" step="any" placeholder="vazio=sem"></label>
+<label>Aviso baixo (amar.)<input id="ce_lwa" type="number" step="any" placeholder="vazio=sem"></label>
+<label>Alarme baixo (verm.)<input id="ce_ler" type="number" step="any" placeholder="vazio=sem"></label>
+<label>Frio (azul)<input id="ce_cold" type="number" step="any" placeholder="vazio=sem"></label>
+</div>
+<div class="row" style="margin-top:10px">
+<button id="ceSave" class="btn-ok">Salvar gauge</button>
+<button id="ceCancel">Cancelar</button>
+</div>
+</div>
+</div>
+</section>
+
+<!-- v0.9: Sistema (OTA + upload HTML + LittleFS) -->
+<section class="pg" id="sys">
+<div class="sys-box">
+<h3>Atualização de firmware</h3>
+<p class="mu">Pelo Arduino IDE, com o cabo USB (placa ESP32 Dev Module). Antes de gravar, clique em <b>Desconectar</b> aqui para liberar a porta COM.</p>
+</div>
+<div class="sys-box">
+<h3>Texto da Serial (log do ESP32)</h3>
+<pre id="serLog"></pre>
+</div>
+<div class="sys-box">
+<h3>Armazenamento (LittleFS)</h3>
+<div id="fsInfo" class="mu">Carregando…</div>
+</div>
+<div class="sys-box">
+<h3>Informações</h3>
+<div class="mu">Petterson Tools · PT CAN Lab v1.8 (PT-CAN-01) — página no GitHub, ligação pelo cabo USB (Web Serial)</div>
+<div class="mu">ESP32 + MCP2515 + TJA1050 · J1939 250 kbps</div>
+<div class="mu" id="sysHeap"></div>
+</div>
+</section>
+
+<footer>
+  <div class="ft-brand">PETTERSON <b>TOOLS</b></div>
+  <div class="ft-info">
+    PT CAN Lab (PT-CAN-01) · Petterson Trucks · Joinville - SC<br>
+    <a href="tel:+554734655688">(47) 3465-5688</a> · <a href="https://wa.me/5547988277273">WhatsApp (47) 98827-7273</a><br>
+    <a href="https://pettersontrucks.com.br">pettersontrucks.com.br</a>
+  </div>
+</footer>
+<script>
+// ===================== v1.8: ligação USB (Web Serial) =====================
+// As rotas /api/... continuam as mesmas; o fetch abaixo manda cada pedido pela Serial.
+// pedido  : 0x01 'Q' id ' ' MET ' ' rota ' ' tamanhoCorpo '\n' corpo
+// resposta: 0x01 'R' id ' ' código ' ' tamanho '\n' corpo
+const USB={port:null,reader:null,writer:null,buf:new Uint8Array(0),id:0,fila:Promise.resolve(),pend:null,log:'',on:false};
+const TE=new TextEncoder(),TD=new TextDecoder();
+const fetchRede=window.fetch.bind(window);
+window.fetch=(url,opt)=>(typeof url==='string'&&url.startsWith('/api'))?usbReq(url,opt||{}):fetchRede(url,opt);
+function usbReq(url,opt){
+ const p=USB.fila.then(()=>usbUm(url,opt));
+ USB.fila=p.catch(()=>{});
+ return p;
+}
+function usbUm(url,opt){
+ return new Promise(async(ok,erro)=>{
+  if(!USB.on||!USB.writer){erro(new Error('USB desconectado'));return}
+  const id=++USB.id,met=(opt.method||'GET').toUpperCase(),corpo=opt.body?TE.encode(String(opt.body)):new Uint8Array(0);
+  const tmr=setTimeout(()=>{if(USB.pend&&USB.pend.id===id){USB.pend=null;erro(new Error('sem resposta'))}},/\/api\/kwp/.test(url)?9000:5000);
+  USB.pend={id,ok:r=>{clearTimeout(tmr);ok(r)}};
+  try{
+   const cab=TE.encode('\x01Q'+id+' '+met+' '+url+' '+corpo.length+'\n');
+   const tudo=new Uint8Array(cab.length+corpo.length);tudo.set(cab);tudo.set(corpo,cab.length);
+   await USB.writer.write(tudo);
+  }catch(e){clearTimeout(tmr);USB.pend=null;erro(e)}
+ });
+}
+function usbRecebe(ch){
+ const n=new Uint8Array(USB.buf.length+ch.length);n.set(USB.buf);n.set(ch,USB.buf.length);USB.buf=n;
+ for(;;){
+  const b=USB.buf;let i=-1;
+  for(let k=0;k<b.length-1;k++)if(b[k]===1&&b[k+1]===82){i=k;break}
+  if(i<0){ // só texto (log): guarda tudo menos um possível início de pacote no fim
+   const fica=(b.length&&b[b.length-1]===1)?1:0;
+   if(b.length-fica>0){usbLog(b.subarray(0,b.length-fica));USB.buf=b.slice(b.length-fica)}
+   return}
+  if(i>0){usbLog(b.subarray(0,i));USB.buf=b.slice(i);continue}
+  let nl=-1;for(let k=2;k<b.length&&k<48;k++)if(b[k]===10){nl=k;break}
+  if(nl<0){if(b.length>48){USB.buf=b.slice(2)}return}
+  const [id,cod,tam]=TD.decode(b.subarray(2,nl)).split(' ').map(Number);
+  if(b.length<nl+1+tam)return;
+  const corpo=TD.decode(b.subarray(nl+1,nl+1+tam));USB.buf=b.slice(nl+1+tam);
+  if(USB.pend&&USB.pend.id===id){const p=USB.pend;USB.pend=null;
+   p.ok({ok:cod<400,status:cod,text:async()=>corpo,json:async()=>JSON.parse(corpo)})}
+ }
+}
+function usbLog(b){
+ USB.log=(USB.log+TD.decode(b)).slice(-20000);
+ const el=document.getElementById('serLog');if(el){el.textContent=USB.log;el.scrollTop=el.scrollHeight}
+}
+async function usbAbre(port){
+ await port.open({baudRate:921600,bufferSize:65536});
+ try{await port.setSignals({dataTerminalReady:false,requestToSend:false})}catch(e){}
+ USB.port=port;USB.writer=port.writable.getWriter();USB.on=true;USB.buf=new Uint8Array(0);
+ usbBotao();
+ (async()=>{
+  while(USB.on&&port.readable){
+   USB.reader=port.readable.getReader();
+   try{for(;;){const{value,done}=await USB.reader.read();if(done)break;if(value)usbRecebe(value)}}
+   catch(e){}finally{try{USB.reader.releaseLock()}catch(e){}}
+   if(!USB.on)break;
+  }
+  usbFechou();
+ })();
+ msg('USB conectado — carregando configuração…');
+ for(let t=0;t<12;t++){try{await loadConfig(true);return}catch(e){await new Promise(r=>setTimeout(r,500))}}
+ msg('O ESP32 não respondeu. Confira se o firmware é o CAN_Lab_USB v1.8 e se o Monitor Serial está fechado.');
+}
+async function usbFecha(){
+ USB.on=false;
+ try{await USB.reader.cancel()}catch(e){}
+ try{USB.writer.releaseLock()}catch(e){}
+ try{await USB.port.close()}catch(e){}
+ usbFechou();
+}
+function usbFechou(){USB.on=false;USB.writer=null;USB.reader=null;if(USB.pend){USB.pend=null}usbBotao();con(false)}
+function usbBotao(){
+ const b=document.getElementById('bUsb');if(!b)return;
+ b.textContent=USB.on?'Desconectar':'Conectar USB';b.className=USB.on?'':'pri';
+ document.getElementById('semusb').classList.toggle('hide',USB.on);
+}
+
+const $=s=>document.querySelector(s),$$=s=>document.querySelectorAll(s);
+const SPD=[1000,500,250,125,100,50],MAXR=500,AL=157.08,CAP_MAX=200000;
+
+// ===== J1939 dicionários =====
+const PGN={0xF004:'EEC1 rotação',0xF003:'EEC2 acelerador',0xF001:'EBC1 freio',0xF002:'ETC1 câmbio',0xF005:'ETC2 marcha',
+0xFEEE:'ET1 temperatura',0xFEEF:'EFL/P1 pressões',0xFEF1:'CCVS velocidade',0xFEF2:'LFE consumo',0xFEF5:'AMB ambiente',
+0xFEF6:'IC1 admissão',0xFEF7:'VEP1 tensão',0xFEE5:'HOURS horímetro',0xFEE9:'LFC combustível',0xFEEC:'VI VIN',
+0xFECA:'DM1 falhas ativas',0xFECB:'DM2 falhas inativas',0xFEC1:'VDHR distância',0xEE00:'Address Claim',0xEA00:'Request',
+0xEC00:'TP.CM',0xEB00:'TP.DT',0x0000:'TSC1',0xFE6C:'TCO1 tacógrafo',0xFEDB:'EI1 injeção/rail',0xFD7D:'Espias painel',0xFEFC:'DD combustível',0xFEAE:'AIR1 pressão ar',0xD000:'Iluminação',0xFEE6:'TD data/hora'};
+const SA={0:'Motor',1:'Motor 2',3:'Câmbio',0x0B:'Freios',0x0F:'Retarder',0x10:'Retarder',0x17:'Painel',0x21:'Carroceria',0x27:'Trailer',0x30:'Pneumático/ABS',0x31:'Aftertreatment',0xEE:'Tacógrafo',0xF9:'Diagnóstico',0xFA:'Diagnóstico 2',0xFE:'Nulo'};
+const MFR={8:'Cummins',86:'Allison',95:'Bendix',141:'Detroit Diesel',147:'ZF',154:'Scania',229:'Bosch',261:'Wabco',271:'WABCO',296:'MAN',365:'Volvo',402:'Meritor',583:'DAF',777:'Eaton'};
+const FMI={
+0:'Acima do normal — severo',1:'Abaixo do normal — severo',
+2:'Dados erráticos/intermitentes',3:'Tensão acima do normal / curto p/ positivo',
+4:'Tensão abaixo do normal / curto p/ terra',5:'Corrente abaixo do normal / circuito aberto',
+6:'Corrente acima do normal / curto-circuito',7:'Sistema mecânico não responde',
+8:'Frequência/largura de pulso anormal',9:'Taxa de atualização anormal',
+10:'Taxa de variação anormal',11:'Causa raiz desconhecida',
+12:'Dispositivo ou componente com defeito',13:'Fora de calibração',
+14:'Instruções especiais',15:'Acima do normal — leve',
+16:'Acima do normal — moderado',17:'Abaixo do normal — leve',
+18:'Abaixo do normal — moderado',19:'Dados de rede recebidos com erro',
+20:'Dados desviaram para cima',21:'Dados desviaram para baixo',
+31:'Condição existente'
+};
+
+// ===== v0.9: Config-driven gauges =====
+let GD=[];  // será carregado do /api/config
+let cfgObj={};  // objeto completo da config
+
+async function loadConfig(repassa){
+ try{
+  const r=await fetch('/api/config');
+  cfgObj=await r.json();
+  GD=cfgObj.gauges||[];
+  msg('Configuração carregada: '+GD.length+' gauges');
+ }catch(e){
+  if(repassa)throw e;
+  msg('Erro ao carregar config — usando padrão');
+  GD=[];
+ }
+ initGauges();
+ renderCfgList();
+}
+
+// ===== Utilidades =====
+const hx=(v,n)=>v.toString(16).toUpperCase().padStart(n,'0');
+const idStr=(id,ext)=>ext?hx(id,8):hx(id,3);
+const pgnOf=id=>{const pf=(id>>>16)&255;return pf<240?(id>>>8)&0x3FF00:(id>>>8)&0x3FFFF};
+function desc(id,ext){
+ if(ext){const p=pgnOf(id),sa=id&255,pf=(id>>>16)&255;
+  return hx(p,p>0xFFFF?5:4)+(PGN[p]?' '+PGN[p]:'')+(pf<240?' →'+hx((id>>>8)&255,2):'')+' · SA '+hx(sa,2)+(SA[sa]?' '+SA[sa]:'');}
+ if(id==0x7DF)return 'OBD pedido (todas)';
+ if(id>=0x7E0&&id<=0x7E7)return 'OBD pedido ECU '+(id-0x7E0);
+ if(id>=0x7E8&&id<=0x7EF)return 'OBD resposta ECU '+(id-0x7E8);
+ return '';
+}
+function fmtUp(ms){const s=Math.floor(ms/1000),h=Math.floor(s/3600),m=Math.floor(s/60)%60;return (h?h+'h ':'')+m+'min '+(s%60)+'s'}
+function fmtBoot(ms){const s=Math.floor(ms/1000),h=Math.floor(s/3600),m=Math.floor(s/60)%60;
+ return (h?h+'h':'')+(m||h?m+'m':'')+(s%60)+'s'}
+function parseHex(s){const d=[];for(let i=0;i<s.length;i+=2)d.push(parseInt(s.substr(i,2),16));return d}
+
+// ===== v0.9: Decodificação genérica via config =====
+function decJ(idsArr){
+ const v={},m={};
+ for(const e of idsArr){
+  if(!(e[1]&1))continue;
+  const pf=(e[0]>>>16)&255,pgn=pf<240?(e[0]>>>8)&0x3FF00:(e[0]>>>8)&0x3FFFF;
+  if(!m[pgn])m[pgn]=parseHex(e[5]);
+ }
+ for(const g of GD){
+  const d=m[g.pgn];
+  if(!d)continue;
+  const sb=g.sb||0, nb=g.nb||1;
+  let raw;
+  if(nb===2){
+   if(sb+1>=d.length)continue;
+   raw=g.le!==false?(d[sb]|(d[sb+1]<<8)):((d[sb]<<8)|d[sb+1]);
+   if(g.na!==undefined&&raw===g.na)continue;
+   if(raw>=0xFE00&&raw<=0xFEFF){v[g.id]=NaN;continue}   // v1.7: indicador de erro J1939
+   if(raw>0xFAFF)continue;                               // v1.7: fora da faixa válida = não disponível
+  }else{
+   if(sb>=d.length)continue;
+   raw=d[sb];
+   if(g.na!==undefined&&raw===g.na)continue;
+   if(raw===0xFE){v[g.id]=NaN;continue}                  // v1.7: indicador de erro J1939
+   if(raw>0xFA)continue;                                 // v1.7: fora da faixa válida = não disponível
+  }
+  v[g.id]=raw*(g.res||1)+(g.off||0);
+ }
+ lastPgn=m;
+ return v;
+}
+let lastPgn={};   // v1.7: últimos dados por PGN (para detalhes como a chave do pedal)
+
+// ===== v0.9: Cores genéricas via thresholds =====
+function gColor(id,v){
+ const g=GD.find(x=>x.id===id);
+ if(!g)return 'var(--ok)';
+ if(g.her!==undefined&&v>g.her)return 'var(--er)';
+ if(g.hwa!==undefined&&v>g.hwa)return 'var(--wa)';
+ if(g.ler!==undefined&&v<g.ler)return 'var(--er)';
+ if(g.lwa!==undefined&&v<g.lwa)return 'var(--wa)';
+ if(g.cold!==undefined&&v<g.cold)return 'var(--bl)';
+ return 'var(--ok)';
+}
+
+// ===== Init gauges =====
+function initGauges(){
+ let h='';
+ for(const g of GD)
+  h+='<div class="gc"><div class="gl">'+g.lbl+'</div>'+
+   '<svg viewBox="0 0 120 66" class="gs"><path d="M10,62 A50,50 0 0,1 110,62" fill="none" stroke="#2a2a2d" stroke-width="8" stroke-linecap="round"/>'+
+   '<path id="a_'+g.id+'" d="M10,62 A50,50 0 0,1 110,62" fill="none" stroke="#3a3a3d" stroke-width="8" stroke-linecap="round" stroke-dasharray="'+AL+'" stroke-dashoffset="'+AL+'"/></svg>'+
+   '<div class="gv" id="v_'+g.id+'">—</div><div class="gu">'+g.u+'</div><div class="gx" id="x_'+g.id+'"></div></div>';
+ $('#gauges').innerHTML=h;
+}
+
+// v1.7: linha extra abaixo do gauge (pedal: chave de marcha lenta SPN 558, byte 1 bits 1-2)
+function gExtra(g){
+ const x=$('#x_'+g.id);if(!x)return;
+ if(g.pgn===61443&&lastPgn[61443]){
+  const s=lastPgn[61443][0]&3;
+  const t=[['pedal pisado','ok'],['pedal solto (marcha lenta)',''],['chave marcha lenta: ERRO','er'],['','']][s];
+  x.textContent=t[0];x.className='gx '+t[1];
+ }
+}
+function updGauges(vals){
+ let any=false;
+ for(const g of GD){
+  const el=$('#v_'+g.id),arc=$('#a_'+g.id);
+  const v=vals[g.id];
+  if(v===undefined||v===null){
+   if(el)el.textContent='—';
+   if(arc){arc.style.strokeDashoffset=AL;arc.style.stroke='#3a3a3d';}
+   continue;
+  }
+  any=true;
+  gExtra(g);
+  if(Number.isNaN(v)){   // v1.7: módulo informa erro no sinal
+   if(el){el.textContent='ERRO';el.style.color='var(--er)';}
+   if(arc){arc.style.strokeDashoffset=AL;arc.style.stroke='#3a3a3d';}
+   continue;
+  }
+  const c=gColor(g.id,v);
+  if(el){el.textContent=v.toFixed(g.d||0);el.style.color=c;}
+  const pct=Math.max(0,Math.min(1,(v-g.mn)/(g.mx-g.mn)));
+  if(arc){arc.style.strokeDashoffset=AL*(1-pct);arc.style.stroke=c;}
+ }
+ $('#dwait').style.display=any?'none':'block';
+ $('#gauges').style.display=any?'grid':'none';
+}
+
+function updScan(vals,nIds,fps){
+ let any=false,h='';
+ for(const g of GD){
+  const v=vals[g.id];
+  const tem=(v!==undefined&&v!==null),er=tem&&Number.isNaN(v);   // v1.7
+  const vs=er?'ERRO':tem?v.toFixed(g.d||0)+' '+g.u:'—';
+  const c=er?'var(--er)':tem?gColor(g.id,v):'var(--mu)';
+  if(v!==undefined)any=true;
+  h+='<div class="sr"><span class="sl">'+g.lbl+'</span><span class="sv" style="color:'+c+'">'+vs+'</span></div>';
+ }
+ $('#scRows').innerHTML=h;
+ const dot=$('#scDot');
+ if(any){$('#scDev').textContent='J1939 — Dados ao vivo';dot.style.background='var(--ok)';}
+ else{$('#scDev').textContent='Aguardando dados J1939…';dot.style.background='var(--mu)';}
+ $('#scFoot').textContent=nIds+' IDs · '+fps+' frames/s';
+}
+
+function updDevs(arr){
+ if(!arr||!arr.length){$('#devN').textContent='Nenhum dispositivo detectado via Address Claim';$('#devT').innerHTML='';return;}
+ $('#devN').textContent=arr.length+' dispositivo(s) detectado(s)';
+ $('#devT').innerHTML=arr.map(e=>{
+  const[sa,nm,t0,t1,n]=e;
+  const nd=parseHex(nm);
+  const mfr=nd.length>=4?((nd[3]<<3)|(nd[2]>>5))&0x7FF:0;
+  const saName=SA[sa]||('SA '+hx(sa,2));
+  const mfrName=MFR[mfr]||(mfr?'Cód.'+mfr:'—');
+  return '<tr><td>'+hx(sa,2)+'</td><td>'+saName+'</td><td>'+mfrName+'</td><td class="mu">'+nm+'</td><td class="mu">'+fmtBoot(t0)+'</td><td class="mu">'+fmtBoot(t1)+'</td><td>'+n+'</td></tr>';
+ }).join('');
+}
+
+// ===== Estado =====
+let seq=0,paused=false,all=[],lost=0,tab='dash',lastFps=0,lastNIds=0;
+
+// ===== Status card =====
+$('#crd').innerHTML='<div class="ttl"><span class="nm">CAN</span><span class="bdg" id="bd">—</span></div>'+
+'<div class="stats"><div class="st"><b id="fps">0</b><span>frames/s</span></div><div class="st"><b id="ld">0%</b><span>carga ≈</span></div>'+
+'<div class="st"><b id="er">0</b><span>erros/s</span></div><div class="st"><b id="rx">0</b><span>total</span></div></div>'+
+'<div class="row"><select id="sp">'+SPD.map(v=>'<option value="'+v+'">'+v+' kbps</option>').join('')+'</select>'+
+'<select id="md"><option value="escuta">Só escuta</option><option value="normal">Normal (dá ACK)</option></select>'+
+'<button data-c="a">Auto-baud</button></div><div class="ex" id="ex"></div>';
+$('#sp').onchange=e=>cmd('v '+e.target.value);
+$('#md').onchange=e=>cmd('m '+e.target.value);
+$('#bNoAck').onclick=()=>cmd('m normal');
+$$('[data-c]').forEach(b=>b.onclick=()=>cmd(b.dataset.c));
+$('#xt').onchange=e=>cmd('k '+e.target.value);
+
+const ECU_PGS=['mrc','ecu','sim','kwp'];  // v1.3: páginas do grupo ECU (v1.4: + kwp)
+function go(p){tab=p;const g=ECU_PGS.includes(p)?'mrc':p;$$('.tab').forEach(b=>b.classList.toggle('on',b.dataset.p==g));$$('.pg').forEach(s=>s.classList.toggle('on',s.id==p));
+ if(p==='sys')updFs();if(p==='cfg')renderCfgList();}
+$$('.tab').forEach(b=>b.onclick=()=>{if(b.dataset.p==='mrc')ecuMenu('home');else go(b.dataset.p)});
+// v1.3: menu ECU por marca
+function ecuMenu(v){go('mrc');$('#mrcHome').style.display=v==='home'?'':'none';$('#mrcScania').style.display=v==='scania'?'':'none';}
+document.addEventListener('click',e=>{const c=e.target.closest('[data-crumb]');if(c){ecuMenu(c.dataset.crumb);return}
+ const br=e.target.closest('[data-brand]');if(br){ecuMenu(br.dataset.brand);return}
+ const g=e.target.closest('.mcard[data-go]');if(g)go(g.dataset.go);});
+
+function msg(t){$('#msg').textContent=t}
+async function cmd(c){
+ msg('Executando "'+c+'"…');
+ try{const r=await fetch('/api/cmd?c='+encodeURIComponent(c));const t=(await r.text()).trim();
+  const k=$('#cons');k.textContent+=t+'\n\n';k.scrollTop=k.scrollHeight;
+  const ls=t.split('\n');msg(ls[ls.length-1]);getS().catch(()=>{});
+ }catch(e){msg('Sem resposta do ESP32')}
+}
+
+function health(c){
+ if(!c.ok)return['FALHA SPI','er'];
+ if(c.fps>0&&c.eps==0)return['REDE OK','ok'];
+ if(c.fps>0)return['OK com erros','wa'];
+ if(c.eps>0)return['SÓ ERROS','er'];
+ return['SEM TRÁFEGO',''];
+}
+function eflg(e){const n=['EWARN','RXWAR','TXWAR','RX-PASSIVO','TX-PASSIVO','BUS-OFF','OVR0','OVR1'];return e?n.filter((_,b)=>e&(1<<b)).join(' '):'sem erro'}
+
+async function getS(){
+ const j=await(await fetch('/api/status')).json();
+ $('#info').textContent='ligado há '+fmtUp(j.up)+' · '+j.cli+' conectado(s) · cristal '+j.xtal+' MHz'+(j.rede?' · rede '+j.rede:'');
+ if(document.activeElement!=$('#xt'))$('#xt').value=j.xtal;
+ const[t,k]=health(j);const b=$('#bd');b.textContent=t;b.className='bdg '+k;
+ $('#fps').textContent=j.fps;$('#ld').textContent=j.carga.toFixed(1)+'%';$('#er').textContent=j.eps;$('#rx').textContent=j.rx;
+ lastFps=j.fps;
+ if(document.activeElement!=$('#sp'))$('#sp').value=j.kbps;
+ if(document.activeElement!=$('#md'))$('#md').value=j.modo=='normal'?'normal':'escuta';
+ $('#noack').classList.toggle('show',!!j.noack&&j.modo!='normal');
+ $('#ex').textContent=(j.modo=='normal'?'NORMAL (dá ACK)':'SÓ ESCUTA')+(j.rep?' · repetidos '+j.rep+'/s':'')+' · EFLG '+hx(j.eflg,2)+' '+eflg(j.eflg)+' · TEC '+j.tec+' REC '+j.rec+' · erros '+j.merr+' · overflow '+j.ovf;
+ if($('#sysHeap'))$('#sysHeap').textContent='Heap livre: '+(j.heap||'?')+' bytes';
+}
+function con(ok){const b=$('#con');b.textContent=ok?'conectado':(USB.on?'sem resposta':'desconectado');b.className='bdg '+(ok?'ok':USB.on?'er':'')}
+
+// ===== Frames ao vivo =====
+function match(f){
+ const q=$('#fId').value.trim().toUpperCase();if(!q)return true;
+ const ext=f[2]&1,id=f[1],s=idStr(id,ext),p=ext?hx(pgnOf(id),4):'';
+ return q.split(/[ ,;]+/).some(t=>t&&(s.startsWith(t)||(ext&&(p.startsWith(t)||p.startsWith('0'+t)))));
+}
+function frmRow(f){
+ const[t,id,fl,len,d]=f,ext=fl&1,rtr=fl&2,by=d.match(/../g)||[];
+ return '<tr><td>'+(t/1000).toFixed(3)+'</td><td>'+idStr(id,ext)+'</td><td>'+(ext?'X':'S')+(rtr?' RTR':'')+'</td><td class="mu">'+desc(id,ext)+'</td><td>'+len+'</td><td>'+by.join(' ')+'</td></tr>';
+}
+function info(){$('#vInfo').textContent=all.length+' frames na memória'+(lost?' · '+lost+' não exibidos':'')}
+function add(fs){
+ if(!fs.length)return;
+ for(const f of fs)all.push(f);
+ if(all.length>30000)all.splice(0,all.length-30000);
+ if(tab!=='vivo')return;
+ const v=fs.filter(match);
+ if(v.length){const w=$('#logW'),fim=w.scrollTop+w.clientHeight>=w.scrollHeight-40,tb=$('#log');
+  tb.insertAdjacentHTML('beforeend',v.slice(-MAXR).map(frmRow).join(''));
+  while(tb.rows.length>MAXR)tb.deleteRow(0);
+  if(fim)w.scrollTop=w.scrollHeight;}
+ info();
+}
+function rerender(){
+ const v=[];for(let k=all.length-1;k>=0&&v.length<MAXR;k--)if(match(all[k]))v.push(all[k]);
+ $('#log').innerHTML=v.reverse().map(frmRow).join('');$('#logW').scrollTop=1e9;
+}
+$('#fId').oninput=rerender;
+$('#bPause').onclick=()=>{paused=!paused;$('#bPause').textContent=paused?'Continuar':'Pausar';if(!paused)seq=0;};
+$('#bClr').onclick=()=>{all=[];lost=0;$('#log').innerHTML='';info();};
+$('#bCsv').onclick=()=>{
+ const L=['tempo_s;id;tipo;dlc;dados'].concat(all.map(f=>(f[0]/1000).toFixed(3)+';'+idStr(f[1],f[2]&1)+';'+(f[2]&1?'X':'S')+(f[2]&2?' RTR':'')+';'+f[3]+';'+((f[4].match(/../g)||[]).join(' '))));
+ const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([L.join('\r\n')],{type:'text/csv'}));
+ a.download='can_'+new Date().toISOString().slice(0,19).replace(/[:T]/g,'-')+'.csv';a.click();
+};
+
+// ===== Tabela de IDs =====
+function rIds(j){
+ const e=j.e.sort((a,b)=>(a[1]&1)-(b[1]&1)||a[0]-b[0]);
+ lastNIds=e.length;
+ $('#idsN').textContent=e.length+' IDs'+(j.desc?' · tabela cheia ('+j.desc+' descartados)':'');
+ $('#idT').innerHTML=e.map(x=>{const[id,fl,len,n,per,d,mud,age]=x,ext=fl&1,s=idStr(id,ext);
+  const by=(d.match(/../g)||[]).map((b,k)=>mud&(1<<k)?'<span class="chg">'+b+'</span>':b).join(' ');
+  return '<tr'+(age>3000?' class="old"':'')+' data-id="'+s+'"><td>'+s+'</td><td>'+(ext?'X':'S')+(fl&2?' RTR':'')+'</td><td class="mu">'+desc(id,ext)+'</td><td>'+n+'</td><td>'+(n>1?(per/10).toFixed(1):'—')+'</td><td>'+len+'</td><td>'+by+'</td><td class="mu">'+(age<1000?'agora':Math.round(age/1000)+' s')+'</td></tr>'}).join('');
+}
+$('#idT').onclick=e=>{const tr=e.target.closest('tr');if(!tr)return;$('#fId').value=tr.dataset.id;go('vivo');rerender();};
+
+// ===== Transmitir =====
+$$('[data-tx]').forEach(b=>b.onclick=()=>{const[i,d]=b.dataset.tx.split('|');$('#tI').value=i;$('#tD').value=d;});
+$('#tB').onclick=()=>{const i=$('#tI').value.trim(),d=$('#tD').value.trim();if(!i){msg('Informe o ID');return;}cmd('w '+i+' '+d);go('vivo');};
+
+// ===== v0.9: Config editor =====
+let editIdx=-1;
+function renderCfgList(){
+ const el=$('#cfgList');
+ if(!GD.length){el.innerHTML='<div class="mu" style="text-align:center;padding:16px">Nenhum gauge configurado</div>';return;}
+ el.innerHTML=GD.map((g,i)=>
+  '<div class="cfg-item" data-i="'+i+'"><span class="ci-lbl">'+g.lbl+'</span>'+
+  '<span class="ci-info">PGN '+g.pgn+' · byte '+g.sb+' · '+g.u+'</span>'+
+  '<span class="ci-del" data-del="'+i+'">×</span></div>'
+ ).join('');
+ el.querySelectorAll('.cfg-item').forEach(item=>{
+  item.onclick=e=>{if(e.target.dataset.del!==undefined)return;openEditor(+item.dataset.i);};
+ });
+ el.querySelectorAll('.ci-del').forEach(btn=>{
+  btn.onclick=e=>{e.stopPropagation();const i=+btn.dataset.del;
+   GD.splice(i,1);saveConfig();renderCfgList();initGauges();};
+ });
+}
+function openEditor(idx){
+ editIdx=idx;
+ const g=idx>=0?GD[idx]:{id:'',lbl:'',u:'',mn:0,mx:100,d:0,pgn:0,sb:0,nb:1,le:true,res:1,off:0,na:255};
+ $('#cfgEditTitle').textContent=idx>=0?'Editar: '+g.lbl:'Novo Gauge';
+ $('#ce_id').value=g.id;$('#ce_lbl').value=g.lbl;$('#ce_u').value=g.u;
+ $('#ce_d').value=g.d||0;$('#ce_mn').value=g.mn;$('#ce_mx').value=g.mx;
+ $('#ce_pgn').value=g.pgn;$('#ce_sb').value=g.sb||0;
+ $('#ce_nb').value=g.nb||1;$('#ce_le').value=g.le!==false?'true':'false';
+ $('#ce_res').value=g.res||1;$('#ce_off').value=g.off||0;$('#ce_na').value=g.na!==undefined?g.na:255;
+ $('#ce_her').value=g.her!==undefined?g.her:'';$('#ce_hwa').value=g.hwa!==undefined?g.hwa:'';
+ $('#ce_lwa').value=g.lwa!==undefined?g.lwa:'';$('#ce_ler').value=g.ler!==undefined?g.ler:'';
+ $('#ce_cold').value=g.cold!==undefined?g.cold:'';
+ $('#cfgEdit').style.display='block';
+}
+function closeEditor(){$('#cfgEdit').style.display='none';editIdx=-1;}
+function readEditor(){
+ const g={id:$('#ce_id').value.trim(),lbl:$('#ce_lbl').value.trim(),u:$('#ce_u').value.trim(),
+  mn:+$('#ce_mn').value,mx:+$('#ce_mx').value,d:+$('#ce_d').value,
+  pgn:+$('#ce_pgn').value,sb:+$('#ce_sb').value,nb:+$('#ce_nb').value,
+  le:$('#ce_le').value==='true',res:+$('#ce_res').value,off:+$('#ce_off').value,
+  na:+$('#ce_na').value};
+ const v=s=>{const x=$('#ce_'+s).value;return x!==''?+x:undefined;};
+ const her=v('her'),hwa=v('hwa'),lwa=v('lwa'),ler=v('ler'),cold=v('cold');
+ if(her!==undefined)g.her=her;if(hwa!==undefined)g.hwa=hwa;
+ if(lwa!==undefined)g.lwa=lwa;if(ler!==undefined)g.ler=ler;
+ if(cold!==undefined)g.cold=cold;
+ return g;
+}
+async function saveConfig(){
+ cfgObj.gauges=GD;
+ try{await fetch('/api/config',{method:'POST',body:JSON.stringify(cfgObj),headers:{'Content-Type':'application/json'}});
+  msg('Configuração salva no ESP32');}catch(e){msg('Erro ao salvar config');}
+}
+$('#ceSave').onclick=()=>{
+ const g=readEditor();
+ if(!g.id||!g.lbl){msg('ID e Label são obrigatórios');return;}
+ if(editIdx>=0)GD[editIdx]=g; else GD.push(g);
+ closeEditor();saveConfig();renderCfgList();initGauges();
+};
+$('#ceCancel').onclick=closeEditor;
+$('#cfgAdd').onclick=()=>openEditor(-1);
+$('#cfgReset').onclick=async()=>{
+ if(!confirm('Resetar toda a configuração para o padrão de fábrica?'))return;
+ try{const r=await fetch('/api/config/reset');cfgObj=await r.json();GD=cfgObj.gauges||[];
+  renderCfgList();initGauges();msg('Config resetada para padrão');}catch(e){msg('Erro ao resetar');}
+};
+
+
+// ===== v0.9: Sistema — LittleFS info =====
+async function updFs(){
+ try{const j=await(await fetch('/api/fs')).json();
+  if(!j.ok){$('#fsInfo').textContent='LittleFS indisponível';return;}
+  const pct=Math.round(j.used*100/j.total);
+  $('#fsInfo').textContent='Usado: '+j.used+' / '+j.total+' bytes ('+pct+'%)'+'';
+ }catch(e){$('#fsInfo').textContent='Erro ao ler info FS';}
+}
+
+// ===== Loops de polling =====
+async function loopS(){try{await getS();con(true)}catch(e){con(false)}setTimeout(loopS,1000)}
+async function loopF(){if(!paused){try{const j=await(await fetch('/api/frames?s='+seq)).json();seq=j.h;lost+=j.l;add(j.f);}catch(e){}}setTimeout(loopF,250)}
+async function loopI(){
+ try{
+  const j=await(await fetch('/api/ids')).json();
+  lastNIds=j.e.length;
+  if(tab==='ids')rIds(j);
+  const vals=decJ(j.e);
+  if(tab==='dash')updGauges(vals);
+  if(tab==='scan')updScan(vals,j.e.length,lastFps);
+ }catch(e){}
+ setTimeout(loopI,800);
+}
+async function loopD(){
+ if(tab==='devs'){try{const j=await(await fetch('/api/devices')).json();updDevs(j);}catch(e){}}
+ setTimeout(loopD,2000);
+}
+function updLamps(l0,l1,hasDm1){
+ const set=(el,on)=>{el.classList.toggle('on',on)};
+ if(!hasDm1){set($('#lMil'),false);set($('#lStp'),false);set($('#lAmb'),false);set($('#lPrt'),false);return;}
+ set($('#lMil'),!!(l0&0xC0));
+ set($('#lStp'),!!(l0&0x30));
+ set($('#lAmb'),!!(l0&0x0C));
+ set($('#lPrt'),!!(l0&0x03));
+}
+function updDtc(j){
+ const hasDm1=j.lt>0;
+ updLamps(j.l0,j.l1,hasDm1);
+ const dot=$('#dtcDot'),tit=$('#dtcTitle'),none=$('#dtcNone'),wrap=$('#dtcWrap'),tb=$('#dtcT');
+ if(!hasDm1){dot.style.background='var(--mu)';tit.textContent='Aguardando DM1…';
+  none.style.display='block';none.className='dtc-none wait';none.textContent='Aguardando mensagens DM1/DM2…';
+  wrap.style.display='none';return;}
+ const nAtivas=j.d.filter(e=>e[3]===1).length;
+ const nInat=j.d.filter(e=>e[3]===2).length;
+ if(j.d.length===0){
+  dot.style.background='var(--ok)';tit.textContent='Sem falhas ativas';
+  none.style.display='block';none.className='dtc-none';none.textContent='Nenhuma falha detectada';
+  wrap.style.display='none';return;
+ }
+ dot.style.background=nAtivas?'var(--er)':'var(--wa)';
+ tit.textContent=nAtivas+' ativa(s), '+nInat+' inativa(s)';
+ none.style.display='none';wrap.style.display='block';
+ tb.innerHTML=j.d.map(e=>{
+  const[spn,fmi,oc,src,sa,t0,t1,cnt]=e;
+  const tipo=src===1?'<span class="dtc-badge ativa">ATIVA</span>':'<span class="dtc-badge inativa">INATIVA</span>';
+  const saName=SA[sa]||hx(sa,2);
+  const fmiDesc=FMI[fmi]||(fmi<=21?'FMI '+fmi:'Reservado');
+  return '<tr><td>'+tipo+'</td><td><b>'+spn+'</b></td><td>'+fmi+'</td><td>'+fmiDesc+'</td><td>'+saName+'</td><td>'+oc+'</td><td>'+cnt+'</td><td class="mu">'+fmtBoot(t1)+'</td></tr>';
+ }).join('');
+}
+async function loopDtc(){
+ if(tab==='dtc'){try{const j=await(await fetch('/api/dtc')).json();updDtc(j);}catch(e){}}
+ setTimeout(loopDtc,1500);
+}
+
+// ===== v1.0: Captura de tráfego CAN =====
+let capOn=false,capBuf=[],capT0=0,capSeq=0,capLost=0,capTimer=null,capFpsC=0,capLastSec=0;
+
+function capFmt(ms){const s=Math.floor(ms/1000),m=Math.floor(s/60),h=Math.floor(m/60);
+ return (h?String(h).padStart(2,'0')+':':'')+String(m%60).padStart(2,'0')+':'+String(s%60).padStart(2,'0');}
+
+function capTick(){
+ if(!capOn)return;
+ const el=Date.now()-capT0;
+ $('#capTime').textContent=capFmt(el);
+ const now=Math.floor(el/1000);
+ if(now!==capLastSec){$('#capFps').textContent=capFpsC;capFpsC=0;capLastSec=now;}
+}
+
+async function capPoll(){
+ if(!capOn)return;
+ try{
+  const j=await(await fetch('/api/frames?s='+capSeq)).json();
+  capSeq=j.h;capLost+=j.l;
+  if(j.f.length){
+   for(const f of j.f)capBuf.push(f);
+   capFpsC+=j.f.length;
+   $('#capCount').textContent=capBuf.length;
+   $('#capLost').textContent=capLost;
+   // preview últimos 50 frames
+   const pv=$('#capLog'),pw=$('#capPreview');
+   pw.style.display='block';
+   const tail=capBuf.slice(-50);
+   pv.innerHTML=tail.map(f=>{
+    const[t,id,fl,len,d]=f,ext=fl&1;
+    const pgn=ext?hx(pgnOf(id),4):'—';
+    const sa=ext?hx(id&255,2):'—';
+    return '<tr><td>'+t+'</td><td>'+idStr(id,ext)+'</td><td>'+pgn+'</td><td>'+sa+'</td><td>'+len+'</td><td>'+((d.match(/../g)||[]).join(' '))+'</td></tr>';
+   }).join('');
+  }
+ }catch(e){}
+ if(capOn)setTimeout(capPoll,100);  // polling rápido: 100ms durante captura
+}
+
+$('#capStart').onclick=()=>{
+ capOn=true;capBuf=[];capLost=0;capFpsC=0;capLastSec=0;
+ capSeq=seq; // começar do ponto atual
+ capT0=Date.now();
+ $('#capStart').style.display='none';
+ $('#capStop').style.display='';
+ $('#capCsv').style.display='none';
+ $('#capPreview').style.display='none';
+ $('#capLog').innerHTML='';
+ $('#capCount').textContent='0';$('#capLost').textContent='0';$('#capFps').textContent='0';$('#capTime').textContent='00:00';
+ $('#capDot').style.background='var(--er)';
+ $('#capTitle').textContent='⏺ CAPTURANDO…';
+ capTimer=setInterval(capTick,200);
+ capPoll();
+ msg('Captura iniciada — conecte o software de diagnóstico agora');
+};
+
+$('#capStop').onclick=()=>{
+ capOn=false;
+ clearInterval(capTimer);
+ $('#capStart').style.display='';
+ $('#capStop').style.display='none';
+ $('#capCsv').style.display=capBuf.length?'':'none';
+ $('#capDot').style.background='var(--ok)';
+ $('#capTitle').textContent='Captura finalizada — '+capBuf.length+' frames';
+ msg('Captura parada: '+capBuf.length+' frames em '+capFmt(Date.now()-capT0));
+};
+
+$('#capCsv').onclick=()=>{
+ if(!capBuf.length){msg('Nenhum frame capturado');return;}
+ const hdr='timestamp_ms;id_hex;tipo;pgn_hex;pgn_dec;sa_hex;sa_dec;dlc;dados_hex';
+ const rows=capBuf.map(f=>{
+  const[t,id,fl,len,d]=f,ext=fl&1;
+  const pgn=ext?pgnOf(id):0;
+  const sa=ext?(id&255):0;
+  return t+';'+idStr(id,ext)+';'+(ext?'X':'S')+(fl&2?' RTR':'')+';'+
+   (ext?hx(pgn,4):'—')+';'+(ext?pgn:'—')+';'+
+   (ext?hx(sa,2):'—')+';'+(ext?sa:'—')+';'+len+';'+
+   ((d.match(/../g)||[]).join(' '));
+ });
+ const csv=hdr+'\r\n'+rows.join('\r\n');
+ const a=document.createElement('a');
+ a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv'}));
+ a.download='can_captura_'+new Date().toISOString().slice(0,19).replace(/[:T]/g,'-')+'.csv';
+ a.click();
+ msg('CSV exportado: '+capBuf.length+' frames');
+};
+
+// ===== v1.1: ECU ID =====
+$('#ecuBtn').onclick=async()=>{
+ $('#ecuBtn').disabled=true;
+ $('#ecuStatus').textContent='Conectando à ECU…';
+ $('#ecuStatus').style.color='var(--c1)';
+ $('#ecuDot').style.background='var(--wa)';
+ $('#ecuResult').style.display='none';
+ $('#ecuRows').innerHTML='';
+ try{
+  const ac=new AbortController();
+  const tm=setTimeout(()=>ac.abort(),15000);
+  const r=await fetch('/api/ecuid',{signal:ac.signal});
+  clearTimeout(tm);
+  const j=await r.json();
+  if(!j.ok){
+   $('#ecuStatus').textContent='❌ '+j.err;
+   $('#ecuStatus').style.color='var(--er)';
+   $('#ecuDot').style.background='var(--er)';
+   msg(j.err);
+  }else{
+   $('#ecuDot').style.background='var(--ok)';
+   $('#ecuStatus').textContent='✓ '+j.fields.length+' campos lidos ('+j.len+' bytes)';
+   $('#ecuStatus').style.color='var(--ok)';
+   let html='';
+   for(const f of j.fields){
+    const hx=(f.b||!f.v)&&f.h?'<div class="mu" style="font-size:11px;font-family:monospace">'+f.h+'</div>':'';
+    html+='<tr><td class="fid">'+f.id+'</td><td class="fname">'+f.n+'</td><td class="fval">'+
+     (f.v||(f.h?'':'—'))+hx+'</td></tr>';
+   }
+   $('#ecuRows').innerHTML=html;
+   $('#ecuResult').style.display='';
+   msg('ECU ID lido com sucesso: '+j.fields.length+' campos');
+  }
+ }catch(e){
+  $('#ecuStatus').textContent='❌ Erro de comunicação';
+  $('#ecuStatus').style.color='var(--er)';
+  $('#ecuDot').style.background='var(--er)';
+  msg('Erro ao ler ECU ID: '+e.message);
+ }
+ $('#ecuBtn').disabled=false;
+};
+
+
+// ===== v1.2: Teste de painel (simulação) =====
+const SIMP=[
+ ['simG1','rpm','Rotação',0,3000,10,'rpm'],['simG1','accel','Pedal',0,100,1,'%'],['simG1','load','Carga',0,100,1,'%'],
+ ['simG1','boost','Turbo',0,3.5,0.05,'bar'],['simG1','fuelRate','Consumo',0,100,0.5,'L/h'],['simG1','hours','Horímetro',0,99999,1,'h'],
+ ['simG2','coolant','Temp. água',-40,150,1,'°C'],['simG2','oilT','Temp. óleo',-40,150,1,'°C'],['simG2','fuelT','Temp. combust.',-40,120,1,'°C'],
+ ['simG2','intakeT','Temp. admissão',-40,120,1,'°C'],['simG2','oilP','Press. óleo',0,10,0.1,'bar'],['simG2','fuelP','Press. combust.',0,10,0.1,'bar'],
+ ['simG2','oilLvl','Nível óleo',0,100,1,'%'],['simG2','coolLvl','Nível água',0,100,1,'%'],
+ ['simG3','speed','Velocidade',0,140,1,'km/h'],['simG3','gear','Marcha',-2,14,1,''],['simG3','fuelLvl','Combustível',0,100,1,'%'],
+ ['simG3','batt','Bateria',16,32,0.1,'V'],['simG3','airPark','Ar estacion.',0,12,0.1,'bar'],['simG3','air1','Ar circuito 1',0,12,0.1,'bar'],
+ ['simG3','air2','Ar circuito 2',0,12,0.1,'bar']];
+const simTm={};let simFirst=true,simBusy={},simSweep=false;
+function simSet(q){fetch('/api/sim/set?'+q)}
+function simVal(k,v){clearTimeout(simTm[k]);simTm[k]=setTimeout(()=>simSet(k+'='+v),60)}
+// v1.4: atalhos rápidos por parâmetro
+const SIMPRE={rpm:[500,1000,1500,2000,2500],coolant:[0,50,100],speed:[0,40,60,80,100,120],fuelLvl:[0,50,100]};
+let simHold=0;  // segura o valor do botão até o próximo /api/sim refletir
+SIMP.forEach(([g,k,l,mi,ma,st,u])=>{const d=document.createElement('div');
+ d.style.cssText='display:grid;grid-template-columns:110px 1fr 70px;gap:8px;align-items:center;margin:5px 0';
+ d.innerHTML='<span class="mu">'+l+'</span><input type="range" id="sim_'+k+'" min="'+mi+'" max="'+ma+'" step="'+st+'" style="padding:0"><span id="simv_'+k+'" style="text-align:right;font-variant-numeric:tabular-nums"></span>';
+ if(SIMPRE[k])d.innerHTML+='<span></span><div style="display:flex;flex-wrap:wrap;gap:4px;grid-column:2/4">'+
+  SIMPRE[k].map(v=>'<button class="simPre" data-k="'+k+'" data-v="'+v+'" style="padding:3px 9px;font-size:12px;min-width:44px">'+v+(u==='%'?'%':u==='°C'?'°':'')+'</button>').join('')+'</div>';
+ $('#'+g).appendChild(d);const i=d.querySelector('input');
+ i.oninput=()=>{$('#simv_'+k).textContent=i.value+' '+u;simVal(k,i.value)}});
+document.addEventListener('click',e=>{const b=e.target.closest('.simPre');if(!b)return;
+ const k=b.dataset.k,v=b.dataset.v,i=$('#sim_'+k),p=SIMP.find(x=>x[1]===k);
+ i.value=v;$('#simv_'+k).textContent=v+' '+p[6];clearTimeout(simTm[k]);simHold=Date.now()+900;
+ simSet('sweep=0&'+k+'='+v);msg(p[2]+' → '+v+' '+p[6])});
+['park','dmAmber','dmRed'].forEach(k=>$('#sim_'+k).onchange=e=>simSet(k+'='+(e.target.checked?1:0)));
+$('#simOn').onclick=()=>{simSet('on=1');msg('Simulação ligada — canal em modo NORMAL')};
+$('#simOff').onclick=()=>{simSet('on=0');msg('Simulação parada — canal voltou ao modo anterior')};
+$('#simEng1').onclick=()=>simSet('sweep=0&rpm=650');
+$('#simEng0').onclick=()=>simSet('sweep=0&rpm=0&speed=0&accel=0&load=0&fuelRate=0&boost=0');
+$('#simSw').onclick=()=>simSet('sweep='+(simSweep?0:1));
+async function simMsg(i){simBusy[i]=1;
+ await fetch('/api/sim/msg?i='+i+'&en='+($('#simEn'+i).checked?1:0)+'&sa='+$('#simSa'+i).value+'&per='+$('#simPe'+i).value);simBusy[i]=0}
+const simTT={};
+function simTelltales(hx){const d=parseHex(hx);if(d.length<8)return;const blk=d[0]&15;
+ const nib=[d[0]>>4];for(let k=1;k<8;k++){nib.push(d[k]&15,d[k]>>4)}
+ nib.forEach((v,k)=>{simTT[blk*15+k]=v&7});}
+function simRenderTT(){const on=Object.entries(simTT).filter(([n,s])=>s>=1&&s<=3);
+ if(!Object.keys(simTT).length){$('#simTt').textContent='Aguardando FD7D do painel…';return}
+ const nm={1:['vermelha','var(--er)'],2:['amarela','var(--wa)'],3:['informativa','var(--bl)']};
+ $('#simTt').innerHTML=on.length?on.map(([n,s])=>'<span class="bdg" style="color:'+nm[s][1]+';margin:2px;display:inline-block">#'+n+' '+nm[s][0]+'</span>').join(''):
+  '<span style="color:var(--ok)">Nenhuma espia acesa</span>';}
+async function loopSim(){
+ if(tab==='sim'){try{
+  const s=await(await fetch('/api/sim')).json();simSweep=!!s.v.sweep;
+  $('#simSt').textContent=s.on?'TRANSMITINDO':'parada';$('#simSt').className='bdg '+(s.on?'ok':'');
+  $('#simSw').style.borderColor=simSweep?'var(--c1)':'';
+  $('#simInfo').innerHTML='Enviados '+s.tx+' · sem ACK '+s.fail+(s.on&&s.fail>s.tx&&s.fail>20?' — <span class="warn">ninguém está dando ACK: confira CAN-H/L e terminação 120 Ω</span>':'');
+  if(Date.now()>simHold)SIMP.forEach(([g,k,l,mi,ma,st,u])=>{const i=$('#sim_'+k);if(document.activeElement!==i){i.value=s.v[k];$('#simv_'+k).textContent=(+s.v[k]).toFixed(st<1?1:0)+' '+u}});
+  ['park','dmAmber','dmRed'].forEach(k=>$('#sim_'+k).checked=!!s.v[k]);
+  if(simFirst){simFirst=false;$('#simMt').innerHTML=s.m.map((m,i)=>'<tr><td><input type="checkbox" id="simEn'+i+'" onchange="simMsg('+i+')"></td><td>'+m.n+
+   '</td><td>'+m.pgn.toString(16).toUpperCase()+'</td><td><input id="simSa'+i+'" style="width:50px" onchange="simMsg('+i+')"></td><td><input id="simPe'+i+'" style="width:64px" onchange="simMsg('+i+')"></td></tr>').join('')}
+  s.m.forEach((m,i)=>{if(simBusy[i])return;$('#simEn'+i).checked=!!m.en;const a=$('#simSa'+i),p=$('#simPe'+i);
+   if(document.activeElement!==a)a.value=m.sa.toString(16).toUpperCase().padStart(2,'0');if(document.activeElement!==p)p.value=m.per});
+  const j=await(await fetch('/api/ids')).json();
+  const own=new Set(s.m.filter(m=>m.en&&s.on).map(m=>m.sa));
+  const rows=j.e.filter(x=>(x[1]&1)).sort((a,b)=>(a[0]&255)-(b[0]&255)||a[0]-b[0]);
+  rows.forEach(x=>{if(((x[0]>>8)&0x3FFFF)==0xFD7D)simTelltales(x[5])});simRenderTT();
+  $('#simRx').innerHTML=rows.map(x=>{const[id,fl,len,n,per,d,mud,age]=x,sa=id&255,pf=(id>>16)&255,pgn=pf<240?(id>>8)&0x3FF00:(id>>8)&0x3FFFF;
+   return '<tr'+(age>3000?' class="old"':'')+'><td>'+id.toString(16).toUpperCase().padStart(8,'0')+'</td><td>'+sa.toString(16).toUpperCase().padStart(2,'0')+' <span class="mu">'+(SA[sa]||'')+
+   '</span></td><td>'+pgn.toString(16).toUpperCase()+' <span class="mu">'+(PGN[pgn]||'')+'</span></td><td>'+(d.match(/../g)||[]).join(' ')+'</td><td>'+(n>1?(per/10).toFixed(0)+' ms':'—')+'</td></tr>'}).join('');
+ }catch(e){}}
+ setTimeout(loopSim,700)}
+
+// ===== v1.4: Medição EMS S6 (KWP2000 21 F0) + pedido livre =====
+// [byte, tamanho, comSinal, escala, casas, unidade, ID XCOM, nome]  (byte 0 = 61)
+const S6F0=[
+ [2,1,0,1,0,'','FB09','Entrada alternador 1'],[3,1,0,1,0,'','FB0A','Entrada alternador 2'],
+ [4,1,0,1,0,'','FB0B','Watchdog de hardware'],
+ [5,2,1,0.1,1,'°C','FB30','Temp. boost (filtrada)'],[7,2,1,0.1,1,'°C','FB32','Temp. motor (filtrada)'],
+ [9,2,0,0.01,2,'V','FB34','Tensão bateria U30 (filtrada)'],[11,1,0,1,0,'','FB43','Comando ar-condicionado (CAN)'],
+ [12,2,0,0.001,3,'V','FBD2','Corrente freio motor (bruto)'],[14,2,0,0.001,3,'V','FBDA','Temp. boost (bruto)'],
+ [16,2,0,0.001,3,'V','FBDC','Temp. motor (bruto)'],[18,2,0,0.001,3,'V','FBDE','Bateria U30 (bruto)'],
+ [20,2,0,0.001,3,'V','FBE0','Alimentação sensores 1 (≈2,5 V)'],[22,2,0,0.001,3,'V','FBE1','Alimentação sensores 2 (≈2,5 V)'],
+ [24,2,1,0.1,1,'°C','FBFA','Temp. combustível (filtrada)'],[26,1,0,1,0,'','FBFF','Status atuador A/C'],
+ [27,1,0,1,0,'','FC03','Saída alternador U15 (cópia)'],[28,1,0,1,0,'','FC04','Saída atuador A/C (cópia)'],
+ [29,2,0,0.001,3,'V','FC3A','Temp. combustível (bruto)'],[31,1,0,1,0,'','FC3B','Imobilizador presente (1) ou não (0)'],
+ [32,1,0,1,0,'','FC4A','Freio motor: 1 = ligado'],[33,1,0,1,0,'','FC4B','Freio motor: quem controla'],
+ [34,1,0,1,0,'','FCA7','Freio motor habilitado (E2)'],[35,1,0,1,0,'','FCA8','Freio motor habilitado (padrão FLASH)'],
+ [36,1,0,1,0,'','FCE7','Nº de alternadores (E2)'],[37,1,0,1,0,'','FCE8','Nº de alternadores (padrão FLASH)'],
+ [38,1,0,1,0,'','FD19','Ventilador habilitado (E2)'],[39,1,0,1,0,'','FD1A','Ventilador habilitado (padrão FLASH)'],
+ [40,1,0,1,0,'','FD8F','Teste de queda: modo do gerador']];
+let kwpRun=false;
+const fmtHx=h=>(h.match(/../g)||[]).join(' ');
+function kwpLog(t){const k=$('#kwpLog');k.textContent=new Date().toLocaleTimeString()+'  '+t+'\n'+k.textContent.slice(0,8000)}
+async function kwpJ(u){return (await fetch(u)).json()}
+function kwpDec(h){const b=parseHex(h);
+ if(b[0]!==0x61||b[1]!==0xF0){$('#kwpRows').innerHTML='<tr><td colspan="4" class="warn">Resposta não é 61 F0: '+fmtHx(h)+'</td></tr>';return}
+ let html='';
+ for(const[o,n,sg,es,cs,u,id,nm]of S6F0){
+  if(o+n>b.length){html+='<tr><td class="fid">'+id+'</td><td class="fname">'+nm+'</td><td class="mu">—</td><td></td></tr>';continue}
+  let r=n===2?(b[o]<<8)|b[o+1]:b[o];if(sg&&n===2&&r>32767)r-=65536;
+  const raw=b.slice(o,o+n).map(x=>x.toString(16).toUpperCase().padStart(2,'0')).join(' ');
+  html+='<tr><td class="fid">'+id+'</td><td class="fname">'+nm+'</td><td class="fval"><b>'+(r*es).toFixed(cs)+'</b> '+u+'</td><td class="mu" style="font-family:monospace">'+raw+'</td></tr>'}
+ if(b.length>41)html+='<tr><td class="fid">…</td><td class="fname">Bytes 41–'+(b.length-1)+' (variáveis seguintes da lista do XCOM)</td><td colspan="2" class="mu" style="font-family:monospace">'+
+  b.slice(41).map(x=>x.toString(16).toUpperCase().padStart(2,'0')).join(' ')+'</td></tr>';
+ $('#kwpRows').innerHTML=html}
+async function kwpStat(){try{const s=await kwpJ('/api/kwp/st');
+ $('#kwpDot').style.background=s.open?'var(--ok)':'var(--mu)';
+ if(!kwpRun)$('#kwpSt').textContent=(s.open?'aberta (canal NORMAL)':'fechada')+' · pedidos '+s.req+' · ok '+s.ok+' · erro '+s.err}catch(e){}}
+async function kwpLer(){const j=await kwpJ('/api/kwp?req=21F0');
+ if(!j.ok){$('#kwpSt').textContent='❌ '+j.err+(j.h?' ('+fmtHx(j.h)+')':'');$('#kwpSt').style.color='var(--er)';return false}
+ $('#kwpSt').style.color='var(--ok)';$('#kwpSt').textContent='✓ '+(j.h.length/2)+' bytes em '+j.ms+' ms'+(kwpRun?' · contínuo':'');kwpDec(j.h);return true}
+$('#kwpOpenB').onclick=async()=>{const j=await kwpJ('/api/kwp/open'+($('#kwpSes').checked?'?ses=81':''));
+ kwpLog(j.ok?'Comunicação aberta (canal em NORMAL)'+(j.h?' — resposta '+fmtHx(j.h):''):'❌ '+j.err+(j.h?' ('+fmtHx(j.h)+')':''));kwpStat()};
+$('#kwpCloseB').onclick=async()=>{kwpRun=false;$('#kwpLp').textContent='▶ Contínuo 4 Hz';await kwpJ('/api/kwp/close');kwpLog('Comunicação fechada — canal voltou ao modo anterior');kwpStat()};
+$('#kwpRd').onclick=async()=>{try{await kwpLer()}catch(e){$('#kwpSt').textContent='❌ Sem resposta do ESP32'}kwpStat()};
+$('#kwpLp').onclick=()=>{kwpRun=!kwpRun;$('#kwpLp').textContent=kwpRun?'■ Parar':'▶ Contínuo 4 Hz';if(kwpRun)kwpLoopF()};
+async function kwpLoopF(){if(!kwpRun)return;if(tab==='kwp'){try{await kwpLer()}catch(e){}}else{kwpRun=false;$('#kwpLp').textContent='▶ Contínuo 4 Hz';return}setTimeout(kwpLoopF,250)}
+$('#kwpSend').onclick=async()=>{const q=$('#kwpReq').value.replace(/[^0-9a-fA-F]/g,'');if(q.length<2)return;
+ kwpLog('→ '+fmtHx(q.toUpperCase()));
+ try{const j=await kwpJ('/api/kwp?req='+q+'&t=3000');kwpLog((j.ok?'← ':'❌ '+j.err+'  ← ')+(j.h?fmtHx(j.h):'(nada)')+'  ['+j.ms+' ms]')}
+ catch(e){kwpLog('❌ Sem resposta do ESP32')}kwpStat()};
+$('#kwpReq').onkeydown=e=>{if(e.key==='Enter')$('#kwpSend').click()};
+setInterval(()=>{if(tab==='kwp'&&!kwpRun)kwpStat()},1500);
+
+// ===== Init =====
+// v1.8: os loops rodam sempre; sem USB eles só mostram "desconectado"
+loopS();loopF();loopI();loopD();loopDtc();loopSim();
+$('#bUsb').onclick=async()=>{
+ if(USB.on){await usbFecha();msg('USB desconectado');return}
+ if(!('serial' in navigator)){alert('Este navegador não tem Web Serial. Use o Chrome ou o Edge do computador.');return}
+ try{await usbAbre(await navigator.serial.requestPort())}
+ catch(e){if(e.name!=='NotFoundError')msg('Não abriu a porta: '+e.message+' (o Monitor Serial do Arduino IDE está aberto?)')}
+};
+if('serial' in navigator){
+ navigator.serial.addEventListener('disconnect',e=>{if(USB.port===e.target){usbFechou();msg('Cabo USB desconectado')}});
+ navigator.serial.getPorts().then(ps=>{if(ps.length===1)usbAbre(ps[0]).catch(()=>{})});   // reconecta na porta já autorizada
+}else msg('Este navegador não tem Web Serial. Use o Chrome ou o Edge do computador.');
+if('serviceWorker' in navigator)navigator.serviceWorker.register('sw.js');
+</script></div></body></html>
