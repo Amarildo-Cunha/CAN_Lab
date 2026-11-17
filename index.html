@@ -148,11 +148,11 @@ table{font-size:13px}
 #serLog{max-height:30vh}.noack b{color:var(--c1)}.noack span{flex:1;line-height:1.5}
 footer{margin:28px 28px 0}
 </style></head><body><div class="wrapx">
-<header><div class="brand">PETTERSON <b>TOOLS</b></div><div class="hrow"><h1>CAN Lab <small>v1.8 · USB</small></h1><button id="bUsb" class="pri">Conectar USB</button><span id="con" class="bdg">desconectado</span><span class="mu" id="info"></span></div></header>
+<header><div class="brand">PETTERSON <b>TOOLS</b></div><div class="hrow"><h1>CAN Lab <small>v1.9 · USB</small></h1><button id="bUsb" class="pri">Conectar USB</button><span id="con" class="bdg">desconectado</span><span class="mu" id="info"></span></div></header>
 <div id="msg">Carregando configuração…</div>
 <div class="semusb" id="semusb"><b>Ligue o ESP32 no cabo USB e clique em "Conectar USB".</b><br>
 Escolha a porta COM do ESP32 (CP210x ou CH340). Feche o Monitor Serial do Arduino IDE antes: só um programa pode usar a porta.<br>
-<span class="mu">Funciona no Chrome ou Edge do computador. Firmware: CAN_Lab_USB v1.8 ou mais novo (921600 baud).</span></div>
+<span class="mu">Funciona no Chrome ou Edge do computador. Firmware: CAN_Lab_USB v1.9 ou mais novo (921600 baud).</span></div>
 <div class="card" id="crd"></div>
 <div class="noack" id="noack"><span>⚠️ <b>Módulo sem ACK.</b> O mesmo frame está se repetindo sem parar porque ninguém confirma o recebimento. Com um módulo sozinho na bancada, use o modo <b>Normal</b>.</span><button class="pri" id="bNoAck">Mudar para Normal</button></div>
 <nav class="tabs">
@@ -246,17 +246,21 @@ Escolha a porta COM do ESP32 (CP210x ou CH340). Feche o Monitor Serial do Arduin
 <section class="pg" id="cap">
 <div class="sc">
 <div class="sh"><span class="dot" id="capDot" style="background:var(--mu)"></span><span id="capTitle">Captura de Tráfego CAN</span></div>
-<p class="mu">Grave todo o tráfego CAN para análise de protocolo e engenharia reversa. Conecte o software de diagnóstico (XCOM, INSITE, etc.) e capture a comunicação.</p>
+<p class="mu">Grava todo o tráfego CAN pela USB em modo binário (v1.9), aguentando a rede a 100 %. Para gravar uma programação (INSITE, XCOM): <b>inicie a captura antes de o software conectar no módulo</b> e só pare depois que ele terminar.</p>
+<div class="noack show" id="capAviso" style="margin:8px 0;display:none"><span>⚠️ O canal está em <b>Normal</b>. Para capturar uma programação use <b>Só escuta</b>: o software e o módulo já se confirmam, e qualquer transmissão do analisador pode atrapalhar a gravação.</span><button class="pri" id="capEscuta">Mudar para Só escuta</button></div>
 <div class="row" style="margin:10px 0;gap:10px">
 <button id="capStart" class="btn-ok" style="font-size:15px;padding:10px 24px">▶ Iniciar Captura</button>
 <button id="capStop" class="btn-danger" style="font-size:15px;padding:10px 24px;display:none">⏹ Parar Captura</button>
 <button id="capCsv" style="font-size:15px;padding:10px 24px;display:none">⬇ Baixar CSV</button>
+<button id="capBin" style="font-size:15px;padding:10px 24px;display:none">⬇ Memória gravada (.bin)</button>
+<button id="capRel" style="font-size:15px;padding:10px 24px;display:none">⬇ Relatório da sessão (.txt)</button>
 </div>
 <div style="display:flex;gap:24px;flex-wrap:wrap;margin:10px 0">
 <div class="st"><b id="capTime" style="font-size:28px;color:var(--c1)">00:00</b><span>tempo</span></div>
 <div class="st"><b id="capCount" style="font-size:28px;color:var(--ok)">0</b><span>frames</span></div>
 <div class="st"><b id="capFps" style="font-size:28px">0</b><span>frames/s</span></div>
 <div class="st"><b id="capLost" style="font-size:28px;color:var(--er)">0</b><span>perdidos</span></div>
+<div class="st"><b id="capOvf" style="font-size:28px;color:var(--wa)">0</b><span>overflow MCP2515</span></div>
 </div>
 <div id="capPreview" style="display:none;margin-top:10px">
 <div class="mu" style="margin-bottom:4px">Últimos frames capturados:</div>
@@ -415,7 +419,7 @@ Escolha a porta COM do ESP32 (CP210x ou CH340). Feche o Monitor Serial do Arduin
 </div>
 <div class="sys-box">
 <h3>Informações</h3>
-<div class="mu">Petterson Tools · PT CAN Lab v1.8 (PT-CAN-01) — página no GitHub, ligação pelo cabo USB (Web Serial)</div>
+<div class="mu">Petterson Tools · PT CAN Lab v1.9 (PT-CAN-01) — ligação USB · captura rápida binária</div>
 <div class="mu">ESP32 + MCP2515 + TJA1050 · J1939 250 kbps</div>
 <div class="mu" id="sysHeap"></div>
 </div>
@@ -460,12 +464,21 @@ function usbRecebe(ch){
  const n=new Uint8Array(USB.buf.length+ch.length);n.set(USB.buf);n.set(ch,USB.buf.length);USB.buf=n;
  for(;;){
   const b=USB.buf;let i=-1;
-  for(let k=0;k<b.length-1;k++)if(b[k]===1&&b[k+1]===82){i=k;break}
+  for(let k=0;k<b.length-1;k++)if(b[k]===1&&(b[k+1]===82||b[k+1]===66)){i=k;break}
   if(i<0){ // só texto (log): guarda tudo menos um possível início de pacote no fim
    const fica=(b.length&&b[b.length-1]===1)?1:0;
    if(b.length-fica>0){usbLog(b.subarray(0,b.length-fica));USB.buf=b.slice(b.length-fica)}
    return}
   if(i>0){usbLog(b.subarray(0,i));USB.buf=b.slice(i);continue}
+  if(b[1]===66){   // v1.9: 0x01 'B' n | n×22 bytes | soma
+   if(b.length<3)return;
+   const n=b[2],tot=3+n*22+1;
+   if(n<1||n>40){USB.buf=b.slice(1);continue}
+   if(b.length<tot)return;
+   let s=0;for(let k=3;k<tot-1;k++)s=(s+b[k])&255;
+   if(s!==b[tot-1]){USB.buf=b.slice(1);continue}   // fora de sincronia: procura de novo
+   fcRecebe(b,3,n);USB.buf=b.slice(tot);continue;
+  }
   let nl=-1;for(let k=2;k<b.length&&k<48;k++)if(b[k]===10){nl=k;break}
   if(nl<0){if(b.length>48){USB.buf=b.slice(2)}return}
   const [id,cod,tam]=TD.decode(b.subarray(2,nl)).split(' ').map(Number);
@@ -474,6 +487,29 @@ function usbRecebe(ch){
   if(USB.pend&&USB.pend.id===id){const p=USB.pend;USB.pend=null;
    p.ok({ok:cod<400,status:cod,text:async()=>corpo,json:async()=>JSON.parse(corpo)})}
  }
+}
+
+// ===================== v1.9: armazenamento da captura rápida =====================
+const FC={on:false,n:0,cap:0,seq:null,us:null,id:null,fl:null,len:null,d:null,gap:0,lastSeq:0,usHi:0,lastUs:0,t0:0,fpsC:0};
+function fcReset(){FC.n=0;FC.cap=0;FC.gap=0;FC.lastSeq=0;FC.usHi=0;FC.lastUs=0;fcCresce(65536)}
+function fcCresce(c){
+ const cp=(old,T,k)=>{const a=new T(c*(k||1));if(old)a.set(old.subarray(0,FC.n*(k||1)));return a};
+ FC.seq=cp(FC.cap?FC.seq:null,Uint32Array);FC.us=cp(FC.cap?FC.us:null,Float64Array);FC.id=cp(FC.cap?FC.id:null,Uint32Array);
+ FC.fl=cp(FC.cap?FC.fl:null,Uint8Array);FC.len=cp(FC.cap?FC.len:null,Uint8Array);FC.d=cp(FC.cap?FC.d:null,Uint8Array,8);FC.cap=c;
+}
+function fcRecebe(b,o,n){
+ if(!FC.on)return;
+ const dv=new DataView(b.buffer,b.byteOffset,b.byteLength);
+ for(let k=0;k<n;k++,o+=22){
+  if(FC.n>=FC.cap)fcCresce(FC.cap*2);
+  const sq=dv.getUint32(o,true),u=dv.getUint32(o+4,true);
+  if(FC.lastSeq&&sq>FC.lastSeq+1)FC.gap+=sq-FC.lastSeq-1;FC.lastSeq=sq;
+  if(FC.n&&u<FC.lastUs&&FC.lastUs-u>2147483648)FC.usHi+=4294967296;FC.lastUs=u;   // micros() dá a volta a cada 71 min
+  const i=FC.n++;
+  FC.seq[i]=sq;FC.us[i]=FC.usHi+u;FC.id[i]=dv.getUint32(o+8,true);FC.fl[i]=b[o+12];FC.len[i]=b[o+13];
+  FC.d.set(b.subarray(o+14,o+22),i*8);
+ }
+ FC.fpsC+=n;
 }
 function usbLog(b){
  USB.log=(USB.log+TD.decode(b)).slice(-20000);
@@ -881,7 +917,7 @@ async function updFs(){
 
 // ===== Loops de polling =====
 async function loopS(){try{await getS();con(true)}catch(e){con(false)}setTimeout(loopS,1000)}
-async function loopF(){if(!paused){try{const j=await(await fetch('/api/frames?s='+seq)).json();seq=j.h;lost+=j.l;add(j.f);}catch(e){}}setTimeout(loopF,250)}
+async function loopF(){if(!paused&&!FC.on){try{const j=await(await fetch('/api/frames?s='+seq)).json();seq=j.h;lost+=j.l;add(j.f);}catch(e){}}setTimeout(loopF,250)}
 async function loopI(){
  try{
   const j=await(await fetch('/api/ids')).json();
@@ -935,91 +971,135 @@ async function loopDtc(){
  setTimeout(loopDtc,1500);
 }
 
-// ===== v1.0: Captura de tráfego CAN =====
-let capOn=false,capBuf=[],capT0=0,capSeq=0,capLost=0,capTimer=null,capFpsC=0,capLastSec=0;
-
+// ===== v1.9: Captura rápida pela USB (binária) =====
+let capOn=false,capT0=0,capTimer=null,capLastSec=0,capOvf0=0,capFw={perd:0,ovf:0};
 function capFmt(ms){const s=Math.floor(ms/1000),m=Math.floor(s/60),h=Math.floor(m/60);
  return (h?String(h).padStart(2,'0')+':':'')+String(m%60).padStart(2,'0')+':'+String(s%60).padStart(2,'0');}
-
+const fcHex=i=>{let s='';for(let k=0;k<FC.len[i]&&k<8;k++)s+=(k?' ':'')+hx(FC.d[i*8+k],2);return s};
 function capTick(){
- if(!capOn)return;
  const el=Date.now()-capT0;
- $('#capTime').textContent=capFmt(el);
+ if(capOn)$('#capTime').textContent=capFmt(el);
  const now=Math.floor(el/1000);
- if(now!==capLastSec){$('#capFps').textContent=capFpsC;capFpsC=0;capLastSec=now;}
+ if(capOn&&now!==capLastSec){$('#capFps').textContent=FC.fpsC;FC.fpsC=0;capLastSec=now;capStat();}
+ $('#capCount').textContent=FC.n;
+ $('#capLost').textContent=FC.gap+(capFw.perd||0);
+ $('#capOvf').textContent=Math.max(0,(capFw.ovf||0)-capOvf0);
+ if(FC.n){
+  $('#capPreview').style.display='block';
+  let h='';for(let i=Math.max(0,FC.n-40);i<FC.n;i++){const id=FC.id[i],ext=FC.fl[i]&1;
+   h+='<tr><td>'+(FC.us[i]/1000).toFixed(3)+'</td><td>'+idStr(id,ext)+'</td><td>'+(ext?hx(pgnOf(id),4):'—')+'</td><td>'+(ext?hx(id&255,2):'—')+'</td><td>'+FC.len[i]+'</td><td>'+fcHex(i)+'</td></tr>'}
+  $('#capLog').innerHTML=h;
+ }
 }
-
-async function capPoll(){
- if(!capOn)return;
- try{
-  const j=await(await fetch('/api/frames?s='+capSeq)).json();
-  capSeq=j.h;capLost+=j.l;
-  if(j.f.length){
-   for(const f of j.f)capBuf.push(f);
-   capFpsC+=j.f.length;
-   $('#capCount').textContent=capBuf.length;
-   $('#capLost').textContent=capLost;
-   // preview últimos 50 frames
-   const pv=$('#capLog'),pw=$('#capPreview');
-   pw.style.display='block';
-   const tail=capBuf.slice(-50);
-   pv.innerHTML=tail.map(f=>{
-    const[t,id,fl,len,d]=f,ext=fl&1;
-    const pgn=ext?hx(pgnOf(id),4):'—';
-    const sa=ext?hx(id&255,2):'—';
-    return '<tr><td>'+t+'</td><td>'+idStr(id,ext)+'</td><td>'+pgn+'</td><td>'+sa+'</td><td>'+len+'</td><td>'+((d.match(/../g)||[]).join(' '))+'</td></tr>';
-   }).join('');
-  }
- }catch(e){}
- if(capOn)setTimeout(capPoll,100);  // polling rápido: 100ms durante captura
+async function capStat(){ // contadores do firmware durante a captura
+ try{const j=await(await fetch('/api/status')).json();capFw={perd:j.fcl||0,ovf:j.ovf||0};
+  $('#capAviso').style.display=(j.modo==='normal')?'flex':'none'}catch(e){}
 }
-
-$('#capStart').onclick=()=>{
- capOn=true;capBuf=[];capLost=0;capFpsC=0;capLastSec=0;
- capSeq=seq; // começar do ponto atual
- capT0=Date.now();
- $('#capStart').style.display='none';
- $('#capStop').style.display='';
- $('#capCsv').style.display='none';
- $('#capPreview').style.display='none';
- $('#capLog').innerHTML='';
- $('#capCount').textContent='0';$('#capLost').textContent='0';$('#capFps').textContent='0';$('#capTime').textContent='00:00';
- $('#capDot').style.background='var(--er)';
- $('#capTitle').textContent='⏺ CAPTURANDO…';
- capTimer=setInterval(capTick,200);
- capPoll();
- msg('Captura iniciada — conecte o software de diagnóstico agora');
+$('#capEscuta').onclick=()=>cmd('m escuta').then(capStat);
+$('#capStart').onclick=async()=>{
+ if(!USB.on){msg('Conecte o USB primeiro');return}
+ fcReset();FC.on=true;FC.fpsC=0;
+ try{const j=await(await fetch('/api/fastcap?on=1')).json();capOvf0=j.ovf||0;capFw={perd:0,ovf:capOvf0}}
+ catch(e){FC.on=false;msg('O ESP32 não aceitou a captura rápida — o firmware é o CAN_Lab_USB v1.9?');return}
+ capOn=true;capLastSec=0;capT0=Date.now();
+ ['capCsv','capBin','capRel'].forEach(k=>$('#'+k).style.display='none');
+ $('#capStart').style.display='none';$('#capStop').style.display='';
+ $('#capLog').innerHTML='';$('#capPreview').style.display='none';
+ $('#capTime').textContent='00:00';$('#capFps').textContent='0';
+ $('#capDot').style.background='var(--er)';$('#capTitle').textContent='⏺ CAPTURANDO (rápida, USB)…';
+ capTimer=setInterval(()=>{capTick()},250);capStat();
+ msg('Captura rápida iniciada — agora conecte o software de diagnóstico');
 };
-
-$('#capStop').onclick=()=>{
- capOn=false;
- clearInterval(capTimer);
- $('#capStart').style.display='';
- $('#capStop').style.display='none';
- $('#capCsv').style.display=capBuf.length?'':'none';
+$('#capStop').onclick=async()=>{
+ try{const j=await(await fetch('/api/fastcap?on=0')).json();capFw={perd:j.perd||0,ovf:j.ovf||0}}catch(e){}
+ await new Promise(r=>setTimeout(r,300));   // recebe o que ainda estava no caminho
+ FC.on=false;capOn=false;clearInterval(capTimer);capTick();
+ $('#capStart').style.display='';$('#capStop').style.display='none';
+ ['capCsv','capBin','capRel'].forEach(k=>$('#'+k).style.display=FC.n?'':'none');
  $('#capDot').style.background='var(--ok)';
- $('#capTitle').textContent='Captura finalizada — '+capBuf.length+' frames';
- msg('Captura parada: '+capBuf.length+' frames em '+capFmt(Date.now()-capT0));
+ const perd=FC.gap+(capFw.perd||0);
+ $('#capTitle').textContent='Captura finalizada — '+FC.n+' frames'+(perd?' · '+perd+' perdidos':' · sem perdas');
+ msg('Captura parada: '+FC.n+' frames em '+capFmt(Date.now()-capT0));
+};
+function baixar(nome,conteudo,tipo){
+ const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([conteudo],{type:tipo}));a.download=nome;a.click();
+ setTimeout(()=>URL.revokeObjectURL(a.href),5000);
+}
+const capNome=ext=>'can_captura_'+new Date(capT0||Date.now()).toISOString().slice(0,19).replace(/[:T]/g,'-')+ext;
+$('#capCsv').onclick=()=>{
+ if(!FC.n){msg('Nenhum frame capturado');return}
+ const L=['timestamp_ms;id_hex;tipo;pgn_hex;pgn_dec;sa_hex;sa_dec;dlc;dados_hex;seq'];
+ for(let i=0;i<FC.n;i++){const id=FC.id[i],fl=FC.fl[i],ext=fl&1,pgn=ext?pgnOf(id):0,sa=ext?(id&255):0;
+  L.push((FC.us[i]/1000).toFixed(3)+';'+idStr(id,ext)+';'+(ext?'X':'S')+(fl&2?' RTR':'')+';'+(ext?hx(pgn,4):'—')+';'+(ext?pgn:'—')+';'+
+   (ext?hx(sa,2):'—')+';'+(ext?sa:'—')+';'+FC.len[i]+';'+fcHex(i)+';'+FC.seq[i])}
+ baixar(capNome('.csv'),L.join('\r\n'),'text/csv');msg('CSV exportado: '+FC.n+' frames');
 };
 
-$('#capCsv').onclick=()=>{
- if(!capBuf.length){msg('Nenhum frame capturado');return;}
- const hdr='timestamp_ms;id_hex;tipo;pgn_hex;pgn_dec;sa_hex;sa_dec;dlc;dados_hex';
- const rows=capBuf.map(f=>{
-  const[t,id,fl,len,d]=f,ext=fl&1;
-  const pgn=ext?pgnOf(id):0;
-  const sa=ext?(id&255):0;
-  return t+';'+idStr(id,ext)+';'+(ext?'X':'S')+(fl&2?' RTR':'')+';'+
-   (ext?hx(pgn,4):'—')+';'+(ext?pgn:'—')+';'+
-   (ext?hx(sa,2):'—')+';'+(ext?sa:'—')+';'+len+';'+
-   ((d.match(/../g)||[]).join(' '));
- });
- const csv=hdr+'\r\n'+rows.join('\r\n');
- const a=document.createElement('a');
- a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv'}));
- a.download='can_captura_'+new Date().toISOString().slice(0,19).replace(/[:T]/g,'-')+'.csv';
- a.click();
- msg('CSV exportado: '+capBuf.length+' frames');
+// ---- montagem das mensagens longas do J1939 (TP: RTS/CTS e BAM) ----
+function capSessao(){
+ const msgs=[],abertas={},simples=[];
+ for(let i=0;i<FC.n;i++){
+  if(!(FC.fl[i]&1))continue;
+  const id=FC.id[i],pf=(id>>>16)&255,ps=(id>>>8)&255,sa=id&255,d=FC.d.subarray(i*8,i*8+8),t=FC.us[i]/1000;
+  if(pf===0xEC){
+   const k=sa+'>'+ps,c=d[0];
+   if(c===0x10||c===0x20){abertas[k]={t,sa,da:ps,tam:d[1]|d[2]<<8,np:d[3],pgn:d[5]|d[6]<<8|d[7]<<16,pk:new Map(),bam:c===0x20};msgs.push(abertas[k])}
+   else simples.push({t,sa,da:ps,tp:true,txt:'TP.CM '+({0x11:'CTS',0x13:'EndOfMsgAck',0xFF:'ABORT'}[c]||hx(c,2))+' '+fcHex(i)});
+  }else if(pf===0xEB){
+   const m=abertas[sa+'>'+ps];if(m)m.pk.set(d[0],d.slice(1));
+  }else if(pf===0xEF||(pf<240&&pf!==0xEA&&pf!==0xEE)){
+   simples.push({t,sa,da:ps,pgn:pf<240?pf<<8:0,txt:fcHex(i)});
+  }
+ }
+ for(const m of msgs){const b=new Uint8Array(m.tam);let falta=0;
+  for(let p=1;p<=m.np;p++){const v=m.pk.get(p);if(v)b.set(v.subarray(0,Math.max(0,Math.min(7,m.tam-(p-1)*7))),(p-1)*7);else falta++}
+  m.dados=b;m.falta=falta}
+ return{msgs,simples};
+}
+// blocos "4D | endereço (4) | tamanho (4) | dados" (gravação de memória vista no INSITE/CM2150)
+function capBlocos(msgs){
+ const bl=[];
+ for(const m of msgs){const d=m.dados;if(m.pgn!==0xEF00||d.length<9||d[0]!==0x4D)continue;
+  const ad=((d[1]<<24)|(d[2]<<16)|(d[3]<<8)|d[4])>>>0,tm=((d[5]<<24)|(d[6]<<16)|(d[7]<<8)|d[8])>>>0;
+  if(tm>d.length-9||tm===0)continue;
+  bl.push({t:m.t,ad,tm,dados:d.subarray(9,9+tm),falta:m.falta,sa:m.sa,da:m.da})}
+ return bl;
+}
+$('#capBin').onclick=()=>{
+ const{msgs}=capSessao(),bl=capBlocos(msgs).filter(b=>!b.falta);
+ if(!bl.length){msg('Nenhum bloco de gravação (4D) completo nesta captura');return}
+ const ini=Math.min(...bl.map(b=>b.ad)),fim=Math.max(...bl.map(b=>b.ad+b.tm));
+ if(fim-ini>16*1024*1024){msg('Faixa de endereços grande demais ('+(fim-ini)+' bytes)');return}
+ const img=new Uint8Array(fim-ini).fill(0xFF);for(const b of bl)img.set(b.dados,b.ad-ini);
+ baixar(capNome('_mem_'+hx(ini,8)+'-'+hx(fim-1,8)+'.bin'),img,'application/octet-stream');
+ msg('Memória exportada: '+bl.length+' blocos, '+hx(ini,8)+'–'+hx(fim-1,8)+' (áreas sem dado = FF; veja o relatório)');
+};
+$('#capRel').onclick=()=>{
+ const{msgs,simples}=capSessao(),bl=capBlocos(msgs);
+ const R=[],ms=v=>v.toFixed(3).padStart(12);
+ R.push('PT CAN Lab v1.9 — relatório da sessão','Captura: '+new Date(capT0).toLocaleString('pt-BR')+' · '+FC.n+' frames · perdidos '+(FC.gap+(capFw.perd||0))+' · overflow MCP2515 '+Math.max(0,(capFw.ovf||0)-capOvf0),'');
+ const ns=new Set();for(let i=0;i<FC.n;i++)if(FC.fl[i]&1)ns.add(FC.id[i]&255);
+ R.push('Endereços (SA) que transmitiram: '+[...ns].sort((a,b)=>a-b).map(s=>hx(s,2)+(SA[s]?' '+SA[s]:'')).join(', '),'');
+ if(bl.length){
+  const ok=bl.filter(b=>!b.falta);bl.sort((a,b)=>a.ad-b.ad);
+  R.push('== Blocos de gravação (comando 4D) ==','Blocos: '+bl.length+' (completos '+ok.length+', incompletos '+(bl.length-ok.length)+')');
+  const ini=bl[0].ad,fim=Math.max(...bl.map(b=>b.ad+b.tm));R.push('Faixa: '+hx(ini,8)+' – '+hx(fim-1,8)+' ('+(fim-ini)+' bytes)');
+  let pos=ini;const bur=[];for(const b of bl){if(b.ad>pos)bur.push(hx(pos,8)+'–'+hx(b.ad-1,8)+' ('+(b.ad-pos)+' bytes)');pos=Math.max(pos,b.ad+b.tm)}
+  R.push('Buracos (não capturados): '+(bur.length?'\n  '+bur.join('\n  '):'nenhum'));
+  const inc=bl.filter(b=>b.falta);if(inc.length)R.push('Blocos incompletos: '+inc.map(b=>hx(b.ad,8)+' (faltam '+b.falta+' pacotes)').join(', '));
+  R.push('');
+ }
+ R.push('== Linha do tempo (sem os blocos 4D) ==','        ms   SA>DA  conteúdo');
+ const ev=[];
+ for(const m of msgs){if(m.pgn===0xEF00&&m.dados[0]===0x4D)continue;
+  ev.push({t:m.t,s:hx(m.sa,2)+'>'+(m.bam?'FF':hx(m.da,2))+'  '+(m.bam?'BAM':'RTS')+' PGN '+hx(m.pgn,4)+' '+m.tam+' bytes'+(m.falta?' (faltam '+m.falta+' pacotes)':'')+': '+[...m.dados.subarray(0,48)].map(v=>hx(v,2)).join(' ')+(m.tam>48?' …':'')})}
+ let rts=0;for(const s of simples){if(/CTS|EndOfMsgAck/.test(s.txt)){rts++;continue}
+  ev.push({t:s.t,s:hx(s.sa,2)+'>'+hx(s.da,2)+'  '+(s.pgn?'PGN '+hx(s.pgn,4)+' ':'')+s.txt})}
+ ev.sort((a,b)=>a.t-b.t);
+ const lim=4000;for(const e of ev.slice(0,lim))R.push(ms(e.t)+'  '+e.s);
+ if(ev.length>lim)R.push('… mais '+(ev.length-lim)+' eventos (veja o CSV)');
+ R.push('','(CTS e EndOfMsgAck omitidos: '+rts+')');
+ baixar(capNome('_relatorio.txt'),R.join('\r\n'),'text/plain');msg('Relatório exportado');
 };
 
 // ===== v1.1: ECU ID =====

@@ -1,6 +1,6 @@
 // PT CAN Lab — service worker: guarda a página no computador para abrir sem internet.
 // Ao publicar uma versão nova da página, troque o nome do cache.
-const CACHE = 'pt-can-lab-v1.8';
+const CACHE = 'pt-can-lab-v1.9';
 const ARQS = ['./', 'index.html', 'manifest.webmanifest', 'icon-192.png', 'icon-512.png', 'icon-maskable-512.png'];
 
 self.addEventListener('install', e => {

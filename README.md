@@ -1,6 +1,6 @@
 # PT CAN Lab — Petterson Tools
 
-Página do analisador de rede CAN J1939 (PT-CAN-01), que conversa pelo **cabo USB** com o firmware `CAN_Lab_USB` (v1.8 ou mais novo) gravado no ESP32.
+Página do analisador de rede CAN J1939 (PT-CAN-01), que conversa pelo **cabo USB** com o firmware `CAN_Lab_USB` (v1.9 ou mais novo) gravado no ESP32.
 
 Abrir no **Chrome ou Edge do computador**: https://amarildo-cunha.github.io/CAN_Lab/ → **Conectar USB** → escolher a porta COM do ESP32.
 
