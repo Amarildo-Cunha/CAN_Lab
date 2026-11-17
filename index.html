@@ -141,7 +141,7 @@ h1{font-size:20px}
 .gv{font-size:34px}
 .gu{font-size:12px}
 .gx{font-size:12px;color:var(--mu);margin-top:4px;min-height:16px}
-.gx.ok{color:var(--ok)}.gx.wa{color:var(--wa)}.gx.er{color:var(--er)}
+.gx.ok{color:var(--ok)}.gx.am{color:var(--c1)}.gx.wa{color:var(--wa)}.gx.er{color:var(--er)}
 .wrap{max-height:68vh}
 table{font-size:13px}
 .noack{display:none;margin:0 28px 14px;padding:12px 16px;border-radius:8px;background:#1a1a00;border:1px solid #4a4a00;color:var(--c1h);align-items:center;gap:16px}
@@ -153,7 +153,7 @@ table{font-size:13px}
 #serLog{max-height:30vh}.noack b{color:var(--c1)}.noack span{flex:1;line-height:1.5}
 footer{margin:28px 28px 0}
 </style></head><body><div class="wrapx">
-<header><div class="brand">PETTERSON <b>TOOLS</b></div><div class="hrow"><h1>CAN Lab <small>v2.2 · USB</small></h1><button id="bUsb" class="pri">Conectar USB</button><span id="con" class="bdg">desconectado</span><span class="mu" id="info"></span></div></header>
+<header><div class="brand">PETTERSON <b>TOOLS</b></div><div class="hrow"><h1>CAN Lab <small>v2.3 · USB</small></h1><button id="bUsb" class="pri">Conectar USB</button><span id="con" class="bdg">desconectado</span><span class="mu" id="info"></span></div></header>
 <div id="msg">Carregando configuração…</div>
 <div class="semusb" id="semusb"><b>Ligue o ESP32 no cabo USB e clique em "Conectar USB".</b><br>
 Escolha a porta COM do ESP32 (CP210x ou CH340). Feche o Monitor Serial do Arduino IDE antes: só um programa pode usar a porta.<br>
@@ -457,7 +457,7 @@ Escolha a porta COM do ESP32 (CP210x ou CH340). Feche o Monitor Serial do Arduin
 </div>
 <div class="sys-box">
 <h3>Informações</h3>
-<div class="mu">Petterson Tools · PT CAN Lab v2.2 (PT-CAN-01) — ECU › Cummins, parâmetros J1939, mostradores em ordem de prioridade, bateria</div>
+<div class="mu">Petterson Tools · PT CAN Lab v2.3 (PT-CAN-01) — ECU › Cummins, parâmetros J1939, mostradores em ordem de prioridade, bateria</div>
 <div class="mu">ESP32 + MCP2515 + TJA1050 · J1939 250 kbps</div>
 <div class="mu" id="sysHeap"></div>
 </div>
@@ -724,6 +724,7 @@ function gColor(id,v){
  const g=GD.find(x=>x.id===id);
  if(!g)return 'var(--ok)';
  if(ehBat(g))return batInfo(v).c;   // v2.2
+ if(ehPed(g))return 'var(--c1)';     // v2.3: pedal sempre amarelo
  if(g.her!==undefined&&v>g.her)return 'var(--er)';
  if(g.hwa!==undefined&&v>g.hwa)return 'var(--wa)';
  if(g.ler!==undefined&&v<g.ler)return 'var(--er)';
@@ -739,8 +740,8 @@ function batInfo(v){
  const k=v>=18?2:1,sis=k===2?'24 V':'12 V',x=v/k;   // x = tensão equivalente de 12 V
  let c,t;
  if(x>15.2){c='var(--er)';t='sobretensão'}
- else if(x>13.2){c='var(--ok)';t='carregando'}
- else if(x>=12.2){c='var(--ok)';t='normal'}
+ else if(x>13.2){c='var(--c1)';t='carregando'}
+ else if(x>=12.2){c='var(--c1)';t='normal'}
  else if(x>=11.6){c='var(--wa)';t='baixa'}
  else{c='var(--er)';t='descarregada'}
  return{pct:Math.max(0,Math.min(1,(x-11.4)/(12.7-11.4))),c,t:'sistema '+sis+' · '+t};
@@ -753,13 +754,24 @@ function batSvg(id){
 }
 // v2.2: mostrador do pedal (ícone que inclina conforme a posição + barra)
 const ehPed=g=>g.tipo==='pedal'||g.id==='pedal';
-function pedSvg(id){
- return '<svg viewBox="0 0 120 66" class="gs"><line x1="22" y1="56" x2="98" y2="56" stroke="#3a3a3d" stroke-width="3" stroke-linecap="round"/>'+
-  '<g id="p_'+id+'" style="transform-origin:60px 54px;transform:rotate(-28deg);transition:transform .25s">'+
-  '<rect x="49" y="6" width="22" height="48" rx="6" fill="#2a2a2d" stroke="#3a3a3d" stroke-width="2"/>'+
-  '<g id="pf_'+id+'" fill="#3a3a3d"><rect x="53" y="12" width="14" height="4" rx="2"/><rect x="53" y="20" width="14" height="4" rx="2"/><rect x="53" y="28" width="14" height="4" rx="2"/><rect x="53" y="36" width="14" height="4" rx="2"/><rect x="53" y="44" width="14" height="4" rx="2"/></g></g>'+
-  '<circle cx="60" cy="54" r="4" fill="#3a3a3d"/>'+
-  '<rect x="22" y="61" width="76" height="4" rx="2" fill="#2a2a2d"/><rect id="pb_'+id+'" x="22" y="61" width="0" height="4" rx="2" fill="#3a3a3d"/></svg>';
+function pedSvg(id){   // v2.3: pé apoiado no pedal (vista de lado); o conjunto gira no pivô do pedal
+ return '<svg viewBox="0 0 120 66" class="gs">'+
+  '<line x1="18" y1="58" x2="102" y2="58" stroke="#3a3a3d" stroke-width="3" stroke-linecap="round"/>'+
+  '<line id="pl_'+id+'" x1="68.4" y1="51.4" x2="106" y2="16" stroke="#3a3a3d" stroke-width="13" stroke-linecap="round"/>'+
+  '<g id="p_'+id+'" style="transform-origin:39px 56px;transform:rotate(10deg)">'+
+   '<path d="M43,13 Q50,9 55,17 L61,33 Q64,42 72,46 L72,56 L43,56 Z" fill="#8a8a90"/>'+
+   '<path d="M43,52 L72,52 L72,56 L43,56 Z" fill="#5a5a60"/>'+
+   '<rect id="pf_'+id+'" x="35" y="9" width="7" height="48" rx="2.5" fill="#3a3a3d"/>'+
+  '</g>'+
+  '<circle cx="39" cy="56" r="3.5" fill="#5a5a60"/>'+
+  '<rect x="22" y="62" width="76" height="3.5" rx="1.75" fill="#2a2a2d"/><rect id="pb_'+id+'" x="22" y="62" width="0" height="3.5" rx="1.75" fill="#3a3a3d"/></svg>';
+}
+// gira pedal + pé no pivô e mantém o joelho parado (a perna acompanha o tornozelo)
+function pedPose(id,deg){
+ const g=$('#p_'+id),l=$('#pl_'+id);if(!g)return;
+ g.style.transform='rotate('+deg.toFixed(1)+'deg)';
+ const r=deg*Math.PI/180,ax=66-39,ay=48-56;   // tornozelo no desenho
+ if(l){l.setAttribute('x1',(39+ax*Math.cos(r)-ay*Math.sin(r)).toFixed(1));l.setAttribute('y1',(56+ax*Math.sin(r)+ay*Math.cos(r)).toFixed(1))}
 }
 const corVar=c=>c.startsWith('var')?getComputedStyle(document.documentElement).getPropertyValue(c.slice(4,-1)).trim():c;
 function initGauges(){
@@ -781,7 +793,7 @@ function gExtra(g){
  const x=$('#x_'+g.id);if(!x)return;
  if(g.pgn===61443&&g.sb===1&&lastPgn[61443]){
   const s=lastPgn[61443][0]&3;
-  const t=[['pedal pisado','ok'],['pedal solto (marcha lenta)',''],['chave marcha lenta: ERRO','er'],['','']][s];
+  const t=[['pedal pisado','am'],['pedal solto (marcha lenta)',''],['chave marcha lenta: ERRO','er'],['','']][s];
   x.textContent=t[0];x.className='gx '+t[1];
  }
 }
@@ -797,12 +809,12 @@ function updGauges(vals){
    if(tem)gExtra(g);
    if(!tem||er){
     if(el){el.textContent=er?'ERRO':'—';el.style.color=er?'var(--er)':''}
-    if(pg)pg.style.transform='rotate(-28deg)';if(pf)pf.setAttribute('fill',er?corVar('var(--er)'):'#3a3a3d');if(pb)pb.setAttribute('width',0);
+    pedPose(g.id,10);if(pf)pf.setAttribute('fill',er?corVar('var(--er)'):'#3a3a3d');if(pb)pb.setAttribute('width',0);
     continue;
    }
-   const pct=Math.max(0,Math.min(1,v/100)),c=corVar(gColor(g.id,v));
-   if(el){el.textContent=v.toFixed(0);el.style.color=gColor(g.id,v)}
-   if(pg)pg.style.transform='rotate('+(-28+40*pct).toFixed(1)+'deg)';   // solto inclinado → pisado deitado
+   const pct=Math.max(0,Math.min(1,v/100)),cc=gColor(g.id,v),c=corVar(cc);
+   if(el){el.textContent=v.toFixed(0);el.style.color=cc}
+   pedPose(g.id,10-38*pct);   // solto em pé → pisado deitado
    if(pf)pf.setAttribute('fill',c);if(pb){pb.setAttribute('width',(76*pct).toFixed(1));pb.setAttribute('fill',c)}
    continue;
   }
