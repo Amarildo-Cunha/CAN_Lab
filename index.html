@@ -153,7 +153,7 @@ table{font-size:13px}
 #serLog{max-height:30vh}.noack b{color:var(--c1)}.noack span{flex:1;line-height:1.5}
 footer{margin:28px 28px 0}
 </style></head><body><div class="wrapx">
-<header><div class="brand">PETTERSON <b>TOOLS</b></div><div class="hrow"><h1>CAN Lab <small>v2.4 · USB</small></h1><button id="bUsb" class="pri">Conectar USB</button><span id="con" class="bdg">desconectado</span><span class="mu" id="info"></span></div></header>
+<header><div class="brand">PETTERSON <b>TOOLS</b></div><div class="hrow"><h1>CAN Lab <small>v2.5 · USB</small></h1><button id="bUsb" class="pri">Conectar USB</button><span id="con" class="bdg">desconectado</span><span class="mu" id="info"></span></div></header>
 <div id="msg">Carregando configuração…</div>
 <div class="semusb" id="semusb"><b>Ligue o ESP32 no cabo USB e clique em "Conectar USB".</b><br>
 Escolha a porta COM do ESP32 (CP210x ou CH340). Feche o Monitor Serial do Arduino IDE antes: só um programa pode usar a porta.<br>
@@ -282,6 +282,7 @@ Escolha a porta COM do ESP32 (CP210x ou CH340). Feche o Monitor Serial do Arduin
 <div class="mgrid">
 <button class="mcard" data-brand="scania"><b>Scania</b><span>EMS S6/S7/S8 · painel ICL · coordenador COO</span></button>
 <button class="mcard" data-brand="cummins"><b>Cummins</b><span>CM2150 · CM850 · J1939 padrão (identificação, parâmetros, falhas)</span></button>
+<button class="mcard" data-brand="mercedes"><b>Mercedes-Benz</b><span>Painel Sprinter T1N (CAN 500 kbps) · MR-PLD Euro 3 (Motor-CAN ISO 11992)</span></button>
 <div class="mcard off"><b>Outras marcas</b><span>Entram aqui conforme formos criando as funções</span></div>
 </div>
 </div>
@@ -301,6 +302,13 @@ Escolha a porta COM do ESP32 (CP210x ou CH340). Feche o Monitor Serial do Arduin
 <button class="mcard" data-go="cmId"><b>Identificação</b><span>Software/calibração (FEDA), componente, ECU, VIN, horas, combustível, hodômetro e configuração do motor</span></button>
 <button class="mcard" data-go="cmPar"><b>Parâmetros</b><span>Todos os valores J1939 que o módulo transmite, decodificados, com interruptores (freio, embreagem, pedal)</span></button>
 <button class="mcard" data-go="dtc"><b>Leitura de falhas</b><span>DM1 ativas e DM2 inativas (aba Falhas) · apagar falhas fica em Identificação</span></button>
+</div>
+</div>
+<div id="mrcMercedes" style="display:none">
+<div class="crumb"><a data-crumb="home">ECU</a> › <b style="color:var(--tx)">Mercedes-Benz</b></div>
+<div class="mgrid">
+<button class="mcard" data-go="mbSp"><b>Painel Sprinter</b><span>T1N CDI 2000–2006 (A 001 446 85 21): rotação, temperatura e lâmpadas pela CAN a 500 kbps · posições livres para testar IDs</span></button>
+<div class="mcard off"><b>MR-PLD — Motor-CAN</b><span>ISO 11992 a 125 kbps (níveis de 8/16 V): precisa do receptor LM393/NPN ou do transceptor NCV7390 na 2ª placa</span><span class="soon">aguardando hardware</span></div>
 </div>
 </div>
 </section>
@@ -368,6 +376,41 @@ Escolha a porta COM do ESP32 (CP210x ou CH340). Feche o Monitor Serial do Arduin
 <div class="row" style="gap:8px"><input id="kwpReq" style="flex:1;font-family:monospace" placeholder="21 F0"><button id="kwpSend" class="btn-ok">Enviar</button></div>
 <pre id="kwpLog" style="max-height:280px;overflow:auto;margin-top:8px;font-size:12px;white-space:pre-wrap"></pre>
 </div>
+</section>
+
+<!-- v2.5: Mercedes — teste do painel Sprinter T1N (firmware v2.0) -->
+<section class="pg" id="mbSp">
+<div class="crumb"><a data-crumb="home">ECU</a> › <a data-crumb="mercedes">Mercedes-Benz</a> › <b style="color:var(--tx)">Painel Sprinter</b></div>
+<div class="sys-box">
+<h3>Teste do painel Sprinter T1N — CAN 500 kbps</h3>
+<p class="mu">Transmite as mensagens da injeção CDI que o painel espera: <b>0x308</b> (rotação e lâmpadas, 20 ms) e <b>0x608</b> (temperaturas, 100 ms). Mesma matriz CAN do W203/W211. <b class="warn">Só em bancada</b>: ao ligar, o canal vai para NORMAL a 500 kbps; ao parar, volta como estava. Velocidade e combustível vêm de sensores ligados no próprio painel, não da CAN. Escala de temperatura (valor − 40 °C) ainda a confirmar.</p>
+<div class="row" style="gap:10px">
+<button id="mbOn" class="btn-ok" style="font-size:15px;padding:10px 20px">▶ Ligar</button>
+<button id="mbOff" class="btn-danger" style="font-size:15px;padding:10px 20px">⏹ Parar</button>
+<button id="mbEng1">Motor ligado (800 rpm)</button><button id="mbEng0">Motor desligado</button>
+<button id="mbSw">Varredura ponteiros</button>
+<span id="mbSt" class="bdg">parado</span>
+</div>
+<div class="mu" id="mbInfo" style="margin-top:6px"></div>
+</div>
+<div class="dash" style="grid-template-columns:repeat(auto-fit,minmax(300px,1fr))">
+<div class="sys-box"><h3>Motor (0x308 / 0x608)</h3><div id="mbG"></div></div>
+<div class="sys-box"><h3>Lâmpadas (0x308)</h3>
+<label class="row"><input type="checkbox" id="mb_vgl">Pré-aquecimento (VGL_KL)</label>
+<label class="row"><input type="checkbox" id="mb_oel">Óleo — nível/pressão (OEL_KL)</label>
+<label class="row"><input type="checkbox" id="mb_temp">Água quente demais (TEMP_KL)</label>
+<label class="row"><input type="checkbox" id="mb_diag">Diagnóstico / injeção (DIAG_KL)</label>
+<label class="row"><input type="checkbox" id="mb_partida">Partida em curso (ANL_LFT)</label>
+<p class="mu">Bits pela lista do W203 — se uma lâmpada não reagir, teste os bits vizinhos nas posições livres.</p></div>
+<div class="sys-box"><h3>O que o painel transmite</h3><div id="mbKombi" class="mu">Aguardando 0x408 do painel…</div></div>
+</div>
+<div class="sys-box"><h3>Mensagens transmitidas</h3>
+<div class="wrap"><table><thead><tr><th></th><th>Mensagem</th><th>ID</th><th>Período ms</th><th>Dados agora</th></tr></thead><tbody id="mbMt"></tbody></table></div></div>
+<div class="sys-box"><h3>Posições livres — transmissão periódica</h3>
+<p class="mu">Para experimentar outros IDs sem regravar o ESP32. ID e bytes em hex (ex.: <code>210</code> e <code>00 00 00 00 00 00 00 00</code>). Marque "29 bits" para ID estendido.</p>
+<div class="wrap"><table><thead><tr><th>Ligada</th><th>ID (hex)</th><th>29 bits</th><th>Bytes (hex)</th><th>Período ms</th><th></th></tr></thead><tbody id="mbSl"></tbody></table></div></div>
+<div class="sys-box"><h3>Recebido na rede (IDs de 11 bits)</h3>
+<div class="wrap"><table><thead><tr><th>ID</th><th>Nome provável</th><th>Dados</th><th>Período</th></tr></thead><tbody id="mbRx"></tbody></table></div></div>
 </section>
 
 <!-- v1.2: Teste de painel (simulação J1939) -->
@@ -457,7 +500,7 @@ Escolha a porta COM do ESP32 (CP210x ou CH340). Feche o Monitor Serial do Arduin
 </div>
 <div class="sys-box">
 <h3>Informações</h3>
-<div class="mu">Petterson Tools · PT CAN Lab v2.4 (PT-CAN-01) — ECU › Cummins, parâmetros J1939, mostradores em ordem de prioridade, bateria</div>
+<div class="mu">Petterson Tools · PT CAN Lab v2.5 (PT-CAN-01) — ECU › Mercedes › Painel Sprinter (CAN 500 kbps), ECU › Cummins, parâmetros J1939</div>
 <div class="mu">ESP32 + MCP2515 + TJA1050 · J1939 250 kbps</div>
 <div class="mu" id="sysHeap"></div>
 </div>
@@ -861,12 +904,12 @@ $('#bNoAck').onclick=()=>cmd('m normal');
 $$('[data-c]').forEach(b=>b.onclick=()=>cmd(b.dataset.c));
 $('#xt').onchange=e=>cmd('k '+e.target.value);
 
-const ECU_PGS=['mrc','ecu','sim','kwp','cmId','cmPar'];  // v1.3: páginas do grupo ECU (v1.4: + kwp)
+const ECU_PGS=['mrc','ecu','sim','kwp','cmId','cmPar','mbSp'];  // v2.5: + mbSp  // v1.3: páginas do grupo ECU (v1.4: + kwp)
 function go(p){tab=p;if(p==='cmPar')setTimeout(parAtualiza,50);const g=ECU_PGS.includes(p)?'mrc':p;$$('.tab').forEach(b=>b.classList.toggle('on',b.dataset.p==g));$$('.pg').forEach(s=>s.classList.toggle('on',s.id==p));
  if(p==='sys')updFs();if(p==='cfg')renderCfgList();}
 $$('.tab').forEach(b=>b.onclick=()=>{if(b.dataset.p==='mrc')ecuMenu('home');else go(b.dataset.p)});
 // v1.3: menu ECU por marca
-function ecuMenu(v){go('mrc');$('#mrcHome').style.display=v==='home'?'':'none';$('#mrcScania').style.display=v==='scania'?'':'none';$('#mrcCummins').style.display=v==='cummins'?'':'none';}
+function ecuMenu(v){go('mrc');$('#mrcHome').style.display=v==='home'?'':'none';$('#mrcScania').style.display=v==='scania'?'':'none';$('#mrcCummins').style.display=v==='cummins'?'':'none';$('#mrcMercedes').style.display=v==='mercedes'?'':'none';}
 document.addEventListener('click',e=>{const c=e.target.closest('[data-crumb]');if(c){ecuMenu(c.dataset.crumb);return}
  const br=e.target.closest('[data-brand]');if(br){ecuMenu(br.dataset.brand);return}
  const g=e.target.closest('.mcard[data-go]');if(g)go(g.dataset.go);});
@@ -1462,6 +1505,67 @@ async function loopSim(){
  }catch(e){}}
  setTimeout(loopSim,700)}
 
+// ===== v2.5: Mercedes — painel Sprinter T1N (firmware CAN_Lab_USB v2.0) =====
+const MBP=[['rpm','Rotação',0,5000,10,'rpm',[0,800,1500,2500,3500]],['coolant','Temp. água',-40,140,1,'°C',[20,60,90,110]],
+ ['intake','Temp. ar',-40,100,1,'°C',null],['oilT','Temp. óleo',-40,150,1,'°C',null]];
+const MBNOME={0x200:'BS_200 (freio/ESP)',0x208:'BS_208 (rodas traseiras)',0x300:'BS_300 (torque ESP)',0x308:'MS_308 rotação',0x328:'BS_328',
+ 0x408:'KOMBI_408 painel',0x410:'KOMBI_410 painel',0x608:'MS_608 temperaturas',0x210:'MS_210 pedal',0x312:'MS_312 torque',0x6F4:'?'};
+const mbTm={};let mbFirst=true,mbSweep=false,mbHold=0,mbBusy={},mbSemFw=false;
+async function mbSet(q){try{const r=await fetch('/api/mb/set?'+q);if(!r.ok)throw 0}catch(e){msg('O ESP32 não respondeu /api/mb — grave o firmware CAN_Lab_USB v2.0')}}
+function mbVal(k,v){clearTimeout(mbTm[k]);mbTm[k]=setTimeout(()=>mbSet(k+'='+v),60)}
+MBP.forEach(([k,l,mi,ma,st,u,pre])=>{const d=document.createElement('div');
+ d.style.cssText='display:grid;grid-template-columns:110px 1fr 80px;gap:8px;align-items:center;margin:5px 0';
+ d.innerHTML='<span class="mu">'+l+'</span><input type="range" id="mb_'+k+'" min="'+mi+'" max="'+ma+'" step="'+st+'" style="padding:0"><span id="mbv_'+k+'" style="text-align:right;font-variant-numeric:tabular-nums"></span>';
+ if(pre)d.innerHTML+='<span></span><div style="display:flex;flex-wrap:wrap;gap:4px;grid-column:2/4">'+pre.map(v=>'<button class="mbPre" data-k="'+k+'" data-v="'+v+'" style="padding:3px 9px;font-size:12px;min-width:44px">'+v+(u==='°C'?'°':'')+'</button>').join('')+'</div>';
+ $('#mbG').appendChild(d);const i=d.querySelector('input');
+ i.oninput=()=>{$('#mbv_'+k).textContent=i.value+' '+u;mbVal(k,i.value)}});
+document.addEventListener('click',e=>{const b=e.target.closest('.mbPre');if(!b)return;const k=b.dataset.k,v=b.dataset.v,p=MBP.find(x=>x[0]===k);
+ $('#mb_'+k).value=v;$('#mbv_'+k).textContent=v+' '+p[5];clearTimeout(mbTm[k]);mbHold=Date.now()+900;mbSet('sweep=0&'+k+'='+v);msg(p[1]+' → '+v+' '+p[5])});
+['vgl','oel','temp','diag','partida'].forEach(k=>$('#mb_'+k).onchange=e=>mbSet(k+'='+(e.target.checked?1:0)));
+$('#mbOn').onclick=()=>{mbSet('on=1');msg('Painel Sprinter: transmitindo — canal em NORMAL a 500 kbps')};
+$('#mbOff').onclick=()=>{mbSet('on=0');msg('Painel Sprinter: parado — canal voltou à velocidade e modo anteriores')};
+$('#mbEng1').onclick=()=>{mbHold=Date.now()+900;mbSet('sweep=0&rpm=800')};
+$('#mbEng0').onclick=()=>{mbHold=Date.now()+900;mbSet('sweep=0&rpm=0')};
+$('#mbSw').onclick=()=>mbSet('sweep='+(mbSweep?0:1));
+async function mbMsg(i){mbBusy[i]=1;try{await fetch('/api/mb/msg?i='+i+'&en='+($('#mbEn'+i).checked?1:0)+'&per='+$('#mbPe'+i).value)}catch(e){}mbBusy[i]=0}
+async function mbSlot(i){const id=$('#mbSi'+i).value.trim(),d=$('#mbSd'+i).value.replace(/[^0-9a-fA-F]/g,'');
+ if(!/^[0-9a-fA-F]{1,8}$/.test(id)){msg('ID inválido na posição '+(i+1));return}
+ if(d.length%2||d.length>16){msg('Bytes inválidos na posição '+(i+1)+' (até 8 bytes em hex)');return}
+ mbBusy['s'+i]=1;try{await fetch('/api/mb/slot?i='+i+'&x='+($('#mbSx'+i).checked?1:0)+'&id='+id+'&d='+d+'&per='+$('#mbSp'+i).value+'&en='+($('#mbSe'+i).checked?1:0));
+  msg('Posição '+(i+1)+': '+($('#mbSe'+i).checked?'transmitindo ':'parada ')+id.toUpperCase()+' '+(d.match(/../g)||[]).join(' ').toUpperCase())}catch(e){}
+ setTimeout(()=>mbBusy['s'+i]=0,800)}
+function mbKombi(hx){const d=parseHex(hx);if(d.length<8)return '';
+ return 'Tanque (byte 0): <b>'+d[0]+'</b>'+(d[0]===0?' <span class="mu">— sem boia ligada</span>':'')+
+  ' · Temp. externa bruta (byte 2): <b>'+(d[2]===255?'— (sem sensor)':d[2])+'</b>'+
+  ' · Quilometragem bruta KM16 (bytes 5–6): <b>'+((d[5]<<8)|d[6])+'</b> <span class="mu">(escala a confirmar)</span><br><span class="mu">0x408 '+hx.match(/../g).join(' ')+'</span>'}
+async function loopMb(){
+ if(tab==='mbSp'){try{
+  const r=await fetch('/api/mb');if(!r.ok)throw 'fw';const s=await r.json();mbSemFw=false;mbSweep=!!s.v.sweep;
+  $('#mbSt').textContent=s.on?'TRANSMITINDO':'parado';$('#mbSt').className='bdg '+(s.on?'ok':'');
+  $('#mbSw').style.borderColor=mbSweep?'var(--c1)':'';
+  $('#mbInfo').innerHTML='Canal a '+s.kbps+' kbps · enviados '+s.tx+' · sem ACK '+s.fail+(s.on&&s.fail>s.tx&&s.fail>20?' — <span class="warn">ninguém está dando ACK: confira CAN-H/L, alimentação do painel e terminação 120 Ω</span>':'');
+  if(Date.now()>mbHold)MBP.forEach(([k,l,mi,ma,st,u])=>{const i=$('#mb_'+k);if(document.activeElement!==i){i.value=s.v[k];$('#mbv_'+k).textContent=(+s.v[k]).toFixed(0)+' '+u}});
+  ['vgl','oel','temp','diag','partida'].forEach(k=>$('#mb_'+k).checked=!!s.v[k]);
+  if(mbFirst){mbFirst=false;
+   $('#mbMt').innerHTML=s.m.map((m,i)=>'<tr><td><input type="checkbox" id="mbEn'+i+'" onchange="mbMsg('+i+')"></td><td>'+m.n+'</td><td>'+m.id.toString(16).toUpperCase()+
+    '</td><td><input id="mbPe'+i+'" style="width:64px" onchange="mbMsg('+i+')"></td><td id="mbMd'+i+'" style="font-family:monospace"></td></tr>').join('');
+   $('#mbSl').innerHTML=s.s.map((x,i)=>'<tr><td><input type="checkbox" id="mbSe'+i+'" onchange="mbSlot('+i+')"></td><td><input id="mbSi'+i+'" style="width:90px" placeholder="210"></td>'+
+    '<td><input type="checkbox" id="mbSx'+i+'"></td><td><input id="mbSd'+i+'" style="width:230px;font-family:monospace" placeholder="00 00 00 00 00 00 00 00"></td>'+
+    '<td><input id="mbSp'+i+'" style="width:64px" value="100"></td><td><button onclick="mbSlot('+i+')">Aplicar</button></td></tr>').join('');
+   s.s.forEach((x,i)=>{if(x.id||x.d){$('#mbSi'+i).value=x.id.toString(16).toUpperCase();$('#mbSd'+i).value=x.d;$('#mbSp'+i).value=x.per||100;$('#mbSx'+i).checked=!!x.x}})}
+  s.m.forEach((m,i)=>{$('#mbMd'+i).textContent=m.d;if(mbBusy[i])return;$('#mbEn'+i).checked=!!m.en;const p=$('#mbPe'+i);if(document.activeElement!==p)p.value=m.per});
+  s.s.forEach((x,i)=>{if(!mbBusy['s'+i])$('#mbSe'+i).checked=!!x.en});
+  const j=await(await fetch('/api/ids')).json();
+  const own=new Set(s.on?s.m.filter(m=>m.en).map(m=>m.id):[]);
+  const rows=j.e.filter(x=>!(x[1]&1)).sort((a,b)=>a[0]-b[0]);
+  const k408=rows.find(x=>x[0]===0x408);if(k408)$('#mbKombi').innerHTML=mbKombi(k408[5]);
+  $('#mbRx').innerHTML=rows.length?rows.map(x=>{const[id,fl,len,n,per,d,mud,age]=x;
+   return '<tr'+(age>3000?' class="old"':'')+'><td>'+id.toString(16).toUpperCase().padStart(3,'0')+(own.has(id)?' <span class="mu">(nosso)</span>':'')+'</td><td class="mu">'+(MBNOME[id]||'')+
+   '</td><td style="font-family:monospace">'+(d.match(/../g)||[]).join(' ')+'</td><td>'+(n>1?(per/10).toFixed(0)+' ms':'—')+'</td></tr>'}).join(''):
+   '<tr><td colspan="4" class="mu">Nada recebido. A 500 kbps o painel sozinho manda 200, 208, 300, 328, 408 e 6F4.</td></tr>';
+ }catch(e){if(e==='fw'&&!mbSemFw){mbSemFw=true;$('#mbInfo').innerHTML='<span class="warn">Este teste precisa do firmware CAN_Lab_USB v2.0 gravado no ESP32.</span>'}}}
+ setTimeout(loopMb,700)}
+
 // ===== v1.4: Medição EMS S6 (KWP2000 21 F0) + pedido livre =====
 // [byte, tamanho, comSinal, escala, casas, unidade, ID XCOM, nome]  (byte 0 = 61)
 const S6F0=[
@@ -1516,7 +1620,7 @@ setInterval(()=>{if(tab==='kwp'&&!kwpRun)kwpStat()},1500);
 
 // ===== Init =====
 // v1.8: os loops rodam sempre; sem USB eles só mostram "desconectado"
-loopS();loopF();loopI();loopD();loopDtc();loopSim();
+loopS();loopF();loopI();loopD();loopDtc();loopSim();loopMb();
 $('#bUsb').onclick=async()=>{
  if(USB.on){await usbFecha();msg('USB desconectado');return}
  if(!('serial' in navigator)){alert('Este navegador não tem Web Serial. Use o Chrome ou o Edge do computador.');return}
