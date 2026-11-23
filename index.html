@@ -155,7 +155,7 @@ table{font-size:13px}
 #serLog{max-height:30vh}.noack b{color:var(--c1)}.noack span{flex:1;line-height:1.5}
 footer{margin:28px 28px 0}
 </style></head><body><div class="wrapx">
-<header><div class="brand">PETTERSON <b>TOOLS</b></div><div class="hrow"><h1>CAN Lab <small>v2.6 · USB</small></h1><button id="bUsb" class="pri">Conectar USB</button><span id="con" class="bdg">desconectado</span><span class="mu" id="info"></span></div></header>
+<header><div class="brand">PETTERSON <b>TOOLS</b></div><div class="hrow"><h1>CAN Lab <small>v2.7 · USB</small></h1><button id="bUsb" class="pri">Conectar USB</button><span id="con" class="bdg">desconectado</span><span class="mu" id="info"></span></div></header>
 <div id="msg">Carregando configuração…</div>
 <div class="semusb" id="semusb"><b>Ligue o ESP32 no cabo USB e clique em "Conectar USB".</b><br>
 Escolha a porta COM do ESP32 (CP210x ou CH340). Feche o Monitor Serial do Arduino IDE antes: só um programa pode usar a porta.<br>
@@ -285,6 +285,7 @@ Escolha a porta COM do ESP32 (CP210x ou CH340). Feche o Monitor Serial do Arduin
 <button class="mcard" data-brand="scania"><b>Scania</b><span>EMS S6/S7/S8 · painel ICL · coordenador COO</span></button>
 <button class="mcard" data-brand="cummins"><b>Cummins</b><span>CM2150 · CM850 · J1939 padrão (identificação, parâmetros, falhas)</span></button>
 <button class="mcard" data-brand="mercedes"><b>Mercedes-Benz</b><span>Painel Sprinter T1N (CAN 500 kbps) · MR-PLD Euro 3 (Motor-CAN ISO 11992)</span></button>
+<button class="mcard" data-brand="volvo"><b>Volvo</b><span>FH4 · FCIOM (módulo de luzes dianteiras, CAN do chassi 500 kbps)</span></button>
 <div class="mcard off"><b>Outras marcas</b><span>Entram aqui conforme formos criando as funções</span></div>
 </div>
 </div>
@@ -312,6 +313,50 @@ Escolha a porta COM do ESP32 (CP210x ou CH340). Feche o Monitor Serial do Arduin
 <button class="mcard" data-go="mbSp"><b>Painel Sprinter</b><span>T1N CDI 2000–2006 (A 001 446 85 21): rotação, temperatura e lâmpadas pela CAN a 500 kbps · posições livres para testar IDs</span></button>
 <div class="mcard off"><b>MR-PLD — Motor-CAN</b><span>ISO 11992 a 125 kbps (níveis de 8/16 V): precisa do receptor LM393/NPN ou do transceptor NCV7390 na 2ª placa</span><span class="soon">aguardando hardware</span></div>
 </div>
+</div>
+<div id="mrcVolvo" style="display:none">
+<div class="crumb"><a data-crumb="home">ECU</a> › <b style="color:var(--tx)">Volvo</b></div>
+<div class="mgrid">
+<button class="mcard" data-go="vvFc"><b>FCIOM (A162)</b><span>FH4 · módulo de luzes dianteiras: acorda o módulo e confirma que ele responde pela CAN do chassi (X1:1 H / X1:5 L, 500 kbps) · pedidos de diagnóstico Volvo</span></button>
+<div class="mcard off"><b>CCIOM / RCIOM / VMCU</b><span>Mesma rede do chassi</span><span class="soon">em desenvolvimento</span></div>
+</div>
+</div>
+</section>
+
+<!-- v2.7: Volvo FCIOM -->
+<section class="pg" id="vvFc">
+<div class="crumb"><a data-crumb="home">ECU</a> › <a data-crumb="volvo">Volvo</a> › <b style="color:var(--tx)">FCIOM</b></div>
+<div class="sys-box">
+<h3>Teste de comunicação do FCIOM — CAN do chassi 500 kbps</h3>
+<p class="mu">Ligação: <b>CAN-H X1:1</b>, <b>CAN-L X1:5</b>, +24 V em X1:29 e X2:29, massa X1:28 e X2:28, ignição X1:17, 120 Ω entre H e L. O FCIOM fica dormindo; um frame no formato Volvo <code>1F41FFF2</code> faz ele dar partida e transmitir por ~5 s (endereço <b>0x21</b>). Durante o teste o canal vai para <b>NORMAL a 500 kbps</b> e volta como estava no fim.</p>
+<div class="row" style="gap:10px">
+<button id="fcTeste" class="btn-ok" style="font-size:15px;padding:10px 20px">▶ Testar comunicação</button>
+<label class="mu"><input type="checkbox" id="fcVmcu"> enviar também anúncio do VMCU (<code>1CFF8011</code> = <code>11</code>) a cada 0,5 s — experimental</label>
+<span id="fcSt" class="bdg">não testado</span>
+</div>
+<div id="fcRes" style="margin-top:10px"></div>
+</div>
+<div class="sys-box" style="margin-top:14px">
+<h3>Mensagens recebidas do FCIOM</h3>
+<div class="wrap" style="max-height:none"><table class="ecu-tbl"><thead><tr><th>ID</th><th>Quantidade</th><th>Período</th><th>Últimos dados</th><th>Observação</th></tr></thead><tbody id="fcRows"><tr><td colspan="5" class="mu">Clique em "Testar comunicação".</td></tr></tbody></table></div>
+</div>
+<div class="sys-box" style="margin-top:14px">
+<h3>Diagnóstico Volvo (UDS) — pedido <code>1F40 21 F2</code>, resposta esperada <code>1F40 F2 21</code></h3>
+<p class="mu">Cada botão acorda o módulo, espera ele dar partida e manda o pedido (o mesmo que o scanner Ancel usa). Respostas longas recebem o "pode continuar" (<code>30 00 00</code>) automaticamente. Até agora, com o FCIOM sozinho na bancada, <b>nenhum pedido teve resposta</b> — provavelmente ele só atende com o VMCU na rede. <b>Sem resposta ≠ sem falhas.</b></p>
+<div class="row" style="gap:8px;flex-wrap:wrap">
+<button data-fcdg="02 10 01">Sessão padrão (10 01)</button>
+<button data-fcdg="02 3E 00">TesterPresent (3E)</button>
+<button data-fcdg="03 22 F1 90">Chassi/VIN (22 F190)</button>
+<button data-fcdg="03 22 F1 81">Software (22 F181)</button>
+<button data-fcdg="03 22 F1 91">Hardware (22 F191)</button>
+<button data-fcdg="03 22 F1 82">Calibração (22 F182)</button>
+<button data-fcdg="03 19 02 29">Ler falhas (19 02 29)</button>
+</div>
+<div class="row" style="gap:8px;margin-top:8px">
+<input id="fcLivre" placeholder="pedido livre, ex.: 03 22 F1 87" style="width:260px">
+<button id="fcLivreB">Enviar pedido livre</button>
+</div>
+<div class="wrap" style="max-height:none;margin-top:10px"><table class="ecu-tbl"><thead><tr><th>Hora</th><th>Pedido</th><th>Resposta</th><th>Interpretação</th></tr></thead><tbody id="fcDg"></tbody></table></div>
 </div>
 </section>
 
@@ -502,7 +547,7 @@ Escolha a porta COM do ESP32 (CP210x ou CH340). Feche o Monitor Serial do Arduin
 </div>
 <div class="sys-box">
 <h3>Informações</h3>
-<div class="mu">Petterson Tools · PT CAN Lab v2.6 (PT-CAN-01) — aviso de ACK na transmissão · ECU › Mercedes › Painel Sprinter (CAN 500 kbps), ECU › Cummins, parâmetros J1939</div>
+<div class="mu">Petterson Tools · PT CAN Lab v2.7 (PT-CAN-01) — ECU › Volvo › FCIOM (teste de comunicação) · aviso de ACK na transmissão · ECU › Mercedes › Painel Sprinter (CAN 500 kbps), ECU › Cummins, parâmetros J1939</div>
 <div class="mu">ESP32 + MCP2515 + TJA1050 · J1939 250 kbps</div>
 <div class="mu" id="sysHeap"></div>
 </div>
@@ -906,12 +951,12 @@ $('#bNoAck').onclick=()=>cmd('m normal');
 $$('[data-c]').forEach(b=>b.onclick=()=>cmd(b.dataset.c));
 $('#xt').onchange=e=>cmd('k '+e.target.value);
 
-const ECU_PGS=['mrc','ecu','sim','kwp','cmId','cmPar','mbSp'];  // v2.5: + mbSp  // v1.3: páginas do grupo ECU (v1.4: + kwp)
+const ECU_PGS=['mrc','ecu','sim','kwp','cmId','cmPar','mbSp','vvFc'];  // v2.7: + vvFc  // v2.5: + mbSp  // v1.3: páginas do grupo ECU (v1.4: + kwp)
 function go(p){tab=p;if(p==='cmPar')setTimeout(parAtualiza,50);const g=ECU_PGS.includes(p)?'mrc':p;$$('.tab').forEach(b=>b.classList.toggle('on',b.dataset.p==g));$$('.pg').forEach(s=>s.classList.toggle('on',s.id==p));
  if(p==='sys')updFs();if(p==='cfg')renderCfgList();}
 $$('.tab').forEach(b=>b.onclick=()=>{if(b.dataset.p==='mrc')ecuMenu('home');else go(b.dataset.p)});
 // v1.3: menu ECU por marca
-function ecuMenu(v){go('mrc');$('#mrcHome').style.display=v==='home'?'':'none';$('#mrcScania').style.display=v==='scania'?'':'none';$('#mrcCummins').style.display=v==='cummins'?'':'none';$('#mrcMercedes').style.display=v==='mercedes'?'':'none';}
+function ecuMenu(v){go('mrc');$('#mrcHome').style.display=v==='home'?'':'none';$('#mrcScania').style.display=v==='scania'?'':'none';$('#mrcCummins').style.display=v==='cummins'?'':'none';$('#mrcMercedes').style.display=v==='mercedes'?'':'none';$('#mrcVolvo').style.display=v==='volvo'?'':'none';}
 document.addEventListener('click',e=>{const c=e.target.closest('[data-crumb]');if(c){ecuMenu(c.dataset.crumb);return}
  const br=e.target.closest('[data-brand]');if(br){ecuMenu(br.dataset.brand);return}
  const g=e.target.closest('.mcard[data-go]');if(g)go(g.dataset.go);});
@@ -1625,6 +1670,106 @@ setInterval(()=>{if(tab==='kwp'&&!kwpRun)kwpStat()},1500);
 
 // ===== Init =====
 // v1.8: os loops rodam sempre; sem USB eles só mostram "desconectado"
+
+// ===================== v2.7: Volvo FCIOM — teste de comunicação =====================
+const FC_SA=0x21,FC_TOOL=0xF2;
+const FC_NOMES={0x14FFF021:'principal (50 ms)',0x17F55521:'multiplexada (2 páginas)',0x17F34421:'tudo FF = sem dado do VMCU',0x1CFF9020:'sai com SA 0x20',0x18F1D521:'para o destino D5',0x19FFA321:'1 s',0x1CFF8021:'anúncio do endereço (só na partida)'};
+let fcBusy=false;
+const fcSleep=ms=>new Promise(r=>setTimeout(r,ms));
+async function fcCmd(c){try{return (await (await fetch('/api/cmd?c='+encodeURIComponent(c))).text()).trim()}catch(e){return ''}}
+async function fcPrep(){const j=await(await fetch('/api/status')).json();const ant={kbps:j.kbps,modo:j.modo};
+ if(j.kbps!=500)await fcCmd('v 500');if(j.modo!='normal')await fcCmd('m normal');await fcSleep(150);return ant}
+async function fcRest(a){if(!a)return;if(a.kbps!=500)await fcCmd('v '+a.kbps);if(a.modo!='normal')await fcCmd('m escuta')}
+function fcAck(t){return /enviado com ACK/.test(t)?'ack':/FALHOU/.test(t)?'falhou':'?'}
+const fcDoFcom=id=>(id&0xFF)===FC_SA||(id&0xFF)===0x20;
+async function fcEscuta(s,ms,vmcu,cb){const t0=Date.now();let tv=0;
+ while(Date.now()-t0<ms){
+  if(vmcu&&Date.now()-tv>=500){tv=Date.now();await fcCmd('w 1CFF8011 11')}
+  const j=await framesDesde(s);s=j.h;for(const f of j.f)cb(f);await fcSleep(120)}
+ return s}
+async function fcTeste(){
+ if(fcBusy)return;fcBusy=true;const st=$('#fcSt'),res=$('#fcRes');
+ st.className='bdg';st.textContent='testando…';res.innerHTML='';$('#fcRows').innerHTML='<tr><td colspan="5" class="mu">Escutando…</td></tr>';
+ let ant=null;
+ try{
+  ant=await fcPrep();
+  let s=await cabecaFrames();
+  // 1) escuta 1 s: o módulo já está transmitindo?
+  let antes=0;s=await fcEscuta(s,1000,false,f=>{if((f[2]&1)&&fcDoFcom(f[1]))antes++});
+  // 2) acorda
+  const tw=await fcCmd('w 1F41FFF2 02 3E 80 00 00 00 00 00');const ack=fcAck(tw);
+  // 3) escuta 7 s
+  const ids={};let n=0,t1=null,t2=null,partida=false,diag=[];
+  s=await fcEscuta(s,7000,$('#fcVmcu').checked,f=>{const[t,id,fl,len,dh]=f;if(!(fl&1))return;
+   if((id>>>8)===0x1F40F2){diag.push(f)}
+   if(!fcDoFcom(id))return;n++;if(t1===null)t1=t;t2=t;
+   const o=ids[id]||(ids[id]={n:0,t:[],d:''});o.n++;o.t.push(t);o.d=dh;
+   if(id===0x17F55521&&dh==='000000000000FFFF')partida=true});
+  const dur=t1===null?0:(t2-t1)/1000;
+  // tabela
+  const ks=Object.keys(ids).map(Number).sort((a,b)=>ids[b].n-ids[a].n);
+  $('#fcRows').innerHTML=ks.length?ks.map(id=>{const o=ids[id];const per=o.t.length>1?Math.round((o.t[o.t.length-1]-o.t[0])/(o.t.length-1))+' ms':'—';
+   return '<tr><td><code>'+hx(id,8)+'</code></td><td>'+o.n+'</td><td>'+per+'</td><td><code>'+((o.d.match(/../g)||[]).join(' '))+'</code></td><td class="mu">'+(FC_NOMES[id]||'')+'</td></tr>'}).join(''):'<tr><td colspan="5" class="mu">Nada recebido do FCIOM.</td></tr>';
+  // resultado
+  let h='';
+  if(n>0){st.className='bdg ok';st.textContent='✔ FCIOM RESPONDEU PELA CAN';
+   h+='<p><b style="color:var(--ok)">O FCIOM está comunicando na CAN do chassi.</b> '+n+' frames de '+ks.length+' IDs em '+dur.toFixed(1)+' s.</p>';
+   h+='<ul class="mu">';
+   h+='<li>Envio do despertar: '+(ack==='ack'?'saiu com ACK':ack==='falhou'?'<b class="warn">sem ACK</b>':'resultado não lido')+'.</li>';
+   if(antes)h+='<li>Ele já estava transmitindo antes do despertar ('+antes+' frames em 1 s).</li>';
+   h+='<li>'+(partida?'Fez a sequência de partida (<code>17F55521 00 … FF FF</code>).':'Não vi a sequência de partida (já estava acordado ou ela ficou fora da escuta).')+'</li>';
+   h+='<li>'+(dur<6.5?'Voltou a dormir depois de ~'+dur.toFixed(1)+' s (normal sem o VMCU na rede).':'<b>Continuou acordado por toda a escuta</b>'+($('#fcVmcu').checked?' — o anúncio do VMCU pode estar mantendo ele ligado!':'.'))+'</li>';
+   if(diag.length)h+='<li><b>Apareceu resposta de diagnóstico</b> em <code>1F40F2xx</code>: '+diag.map(f=>hx(f[1],8)+' '+f[4]).join(' · ')+'</li>';
+   h+='</ul>';
+  }else{
+   st.className='bdg er';st.textContent='✖ SEM RESPOSTA';
+   h+='<p><b style="color:var(--er)">O FCIOM não transmitiu nada.</b></p><ul class="mu">';
+   h+='<li>Envio do despertar: '+(ack==='ack'?'saiu com ACK (algum controlador está na rede, mas o FCIOM não deu partida)':ack==='falhou'?'<b>sem ACK</b> — ninguém na rede: confira X1:1/X1:5, 120 Ω, GND comum':'resultado não lido')+'.</li>';
+   h+='<li>Confira +24 V em X1:29/X2:29, massa X1:28/X2:28 e <b>ignição em X1:17</b>; desligue e ligue o módulo e teste de novo.</li></ul>';
+  }
+  res.innerHTML=h;
+ }catch(e){st.className='bdg er';st.textContent='erro';res.textContent='Erro: '+e}
+ finally{await fcRest(ant);fcBusy=false}
+}
+function fcInterp(d){if(!d.length)return'';const sid=d[0];
+ if(sid===0x7F){const nrc={0x10:'recusado',0x11:'serviço não suportado',0x12:'subfunção não suportada',0x13:'tamanho errado',0x22:'condições não atendidas',0x31:'fora de faixa',0x33:'acesso negado (segurança)',0x78:'aguarde (resposta pendente)',0x7E:'subfunção não suportada nesta sessão',0x7F:'serviço não suportado nesta sessão'};return 'Negativa ao serviço '+hx(d[1],2)+': '+(nrc[d[2]]||'código '+hx(d[2],2))}
+ if(sid===0x50)return 'Sessão aberta';if(sid===0x7E)return 'TesterPresent OK';
+ if(sid===0x62){const did=hx(d[1],2)+hx(d[2],2);const v=d.slice(3);const a=v.map(c=>c>=32&&c<127?String.fromCharCode(c):'').join('');return 'DID '+did+': '+(a.length>=v.length*0.6?'"'+a+'"':v.map(c=>hx(c,2)).join(' '))}
+ if(sid===0x59){const n=Math.floor((d.length-3)/4);if(!n)return 'Nenhuma falha (o módulo respondeu)';let o=[];for(let i=3;i+3<d.length;i+=4)o.push(hx(d[i],2)+hx(d[i+1],2)+hx(d[i+2],2)+' st '+hx(d[i+3],2));return n+' falha(s): '+o.join(', ')}
+ return 'Resposta positiva ao serviço '+hx(sid-0x40,2)}
+async function fcDiag(req){
+ if(fcBusy)return;fcBusy=true;const tb=$('#fcDg');const row=document.createElement('tr');const hr=new Date().toLocaleTimeString();
+ row.innerHTML='<td>'+hr+'</td><td><code>'+req+'</code></td><td class="mu">enviando…</td><td></td>';tb.prepend(row);
+ let ant=null;
+ try{
+  ant=await fcPrep();
+  const b=req.trim().split(/\s+/).map(x=>parseInt(x,16));while(b.length<8)b.push(0);const dados=b.slice(0,8).map(v=>hx(v,2)).join(' ');
+  let s=await cabecaFrames();
+  // acorda e espera a partida
+  await fcCmd('w 1F41FFF2 02 3E 80 00 00 00 00 00');
+  let acordou=false;s=await fcEscuta(s,600,false,f=>{if((f[2]&1)&&fcDoFcom(f[1]))acordou=true});
+  const ack=fcAck(await fcCmd('w 1F4021F2 '+dados));
+  // espera resposta com montagem ISO-TP
+  let rsp=null,buf=[],tot=0,resp=[];const t0=Date.now();
+  while(Date.now()-t0<2500&&!rsp){
+   const j=await framesDesde(s);s=j.h;
+   for(const f of j.f){const[t,id,fl,len,dh]=f;if(!(fl&1))continue;if(fcDoFcom(id))acordou=true;
+    if((id>>>8)!==0x1F40F2)continue;const d=parseHex(dh);resp.push(hx(id,8)+' '+(dh.match(/../g)||[]).join(' '));
+    const pci=d[0]>>4;
+    if(pci===0){rsp=d.slice(1,1+(d[0]&15));if(rsp[0]===0x7F&&rsp[2]===0x78){rsp=null}}
+    else if(pci===1){tot=((d[0]&15)<<8)|d[1];buf=d.slice(2);await fcCmd('w 1F4021F2 30 00 00 00 00 00 00 00')}
+    else if(pci===2){buf=buf.concat(d.slice(1));if(buf.length>=tot){rsp=buf.slice(0,tot)}}}
+   if(!rsp)await fcSleep(60)}
+  const c=row.children;
+  if(rsp){c[2].innerHTML='<code>'+resp.join('<br>')+'</code>';c[3].innerHTML='<b style="color:var(--ok)">'+fcInterp(rsp)+'</b>'}
+  else if(resp.length){c[2].innerHTML='<code>'+resp.join('<br>')+'</code>';c[3].textContent='resposta incompleta'}
+  else{c[2].innerHTML='<span class="warn">sem resposta</span>';c[3].textContent=(ack==='falhou'?'pedido sem ACK — ninguém na rede. ':'')+(acordou?'O FCIOM acordou mas não respondeu ao pedido.':'O FCIOM não deu partida.')}
+ }catch(e){row.children[2].textContent='erro: '+e}
+ finally{await fcRest(ant);fcBusy=false}
+}
+$('#fcTeste').onclick=fcTeste;
+document.addEventListener('click',e=>{const b=e.target.closest('[data-fcdg]');if(b)fcDiag(b.dataset.fcdg)});
+$('#fcLivreB').onclick=()=>{const v=$('#fcLivre').value.trim();if(/^([0-9a-f]{2}\s*)+$/i.test(v))fcDiag(v);else msg('Pedido livre: digite bytes hex, ex. 03 22 F1 87')};
 loopS();loopF();loopI();loopD();loopDtc();loopSim();loopMb();
 $('#bUsb').onclick=async()=>{
  if(USB.on){await usbFecha();msg('USB desconectado');return}
