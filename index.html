@@ -126,6 +126,8 @@ header .brand{font-size:22px;margin:0}
 header .hrow{flex:1}
 h1{font-size:20px}
 #msg{padding:6px 28px}
+.txok,.txfail{margin-left:12px;padding:2px 10px;border-radius:99px;font-weight:700;font-family:system-ui,sans-serif;font-size:12px}
+.txok{background:var(--c1);color:var(--ink)}.txfail{background:var(--er);color:#000}
 .card{margin:14px 28px;padding:14px 18px;display:grid;grid-template-columns:auto 1fr auto;align-items:center;gap:6px 32px}
 .card .ttl{gap:12px;justify-content:flex-start}
 .card .stats{margin:0;gap:24px}
@@ -153,7 +155,7 @@ table{font-size:13px}
 #serLog{max-height:30vh}.noack b{color:var(--c1)}.noack span{flex:1;line-height:1.5}
 footer{margin:28px 28px 0}
 </style></head><body><div class="wrapx">
-<header><div class="brand">PETTERSON <b>TOOLS</b></div><div class="hrow"><h1>CAN Lab <small>v2.5 · USB</small></h1><button id="bUsb" class="pri">Conectar USB</button><span id="con" class="bdg">desconectado</span><span class="mu" id="info"></span></div></header>
+<header><div class="brand">PETTERSON <b>TOOLS</b></div><div class="hrow"><h1>CAN Lab <small>v2.6 · USB</small></h1><button id="bUsb" class="pri">Conectar USB</button><span id="con" class="bdg">desconectado</span><span class="mu" id="info"></span></div></header>
 <div id="msg">Carregando configuração…</div>
 <div class="semusb" id="semusb"><b>Ligue o ESP32 no cabo USB e clique em "Conectar USB".</b><br>
 Escolha a porta COM do ESP32 (CP210x ou CH340). Feche o Monitor Serial do Arduino IDE antes: só um programa pode usar a porta.<br>
@@ -500,7 +502,7 @@ Escolha a porta COM do ESP32 (CP210x ou CH340). Feche o Monitor Serial do Arduin
 </div>
 <div class="sys-box">
 <h3>Informações</h3>
-<div class="mu">Petterson Tools · PT CAN Lab v2.5 (PT-CAN-01) — ECU › Mercedes › Painel Sprinter (CAN 500 kbps), ECU › Cummins, parâmetros J1939</div>
+<div class="mu">Petterson Tools · PT CAN Lab v2.6 (PT-CAN-01) — aviso de ACK na transmissão · ECU › Mercedes › Painel Sprinter (CAN 500 kbps), ECU › Cummins, parâmetros J1939</div>
 <div class="mu">ESP32 + MCP2515 + TJA1050 · J1939 250 kbps</div>
 <div class="mu" id="sysHeap"></div>
 </div>
@@ -914,7 +916,10 @@ document.addEventListener('click',e=>{const c=e.target.closest('[data-crumb]');i
  const br=e.target.closest('[data-brand]');if(br){ecuMenu(br.dataset.brand);return}
  const g=e.target.closest('.mcard[data-go]');if(g)go(g.dataset.go);});
 
-function msg(t){$('#msg').textContent=t}
+function msg(t){const m=$('#msg');m.textContent=t;
+ // v2.6: aviso ao lado do resultado da transmissão (comando w)
+ if(/TX .*enviado com ACK/.test(t)){const b=document.createElement('span');b.className='txok';b.textContent='✔ MÓDULO RECEBEU (ACK)';m.appendChild(b)}
+ else if(/TX .*FALHOU/.test(t)){const b=document.createElement('span');b.className='txfail';b.textContent='✖ NENHUM MÓDULO RECEBEU';m.appendChild(b)}}
 async function cmd(c){
  msg('Executando "'+c+'"…');
  try{const r=await fetch('/api/cmd?c='+encodeURIComponent(c));const t=(await r.text()).trim();
