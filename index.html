@@ -155,7 +155,7 @@ table{font-size:13px}
 #serLog{max-height:30vh}.noack b{color:var(--c1)}.noack span{flex:1;line-height:1.5}
 footer{margin:28px 28px 0}
 </style></head><body><div class="wrapx">
-<header><div class="brand">PETTERSON <b>TOOLS</b></div><div class="hrow"><h1>CAN Lab <small>v2.12 · USB</small></h1><button id="bUsb" class="pri">Conectar USB</button><span id="con" class="bdg">desconectado</span><span class="mu" id="info"></span></div></header>
+<header><div class="brand">PETTERSON <b>TOOLS</b></div><div class="hrow"><h1>CAN Lab <small>v2.13 · USB</small></h1><button id="bUsb" class="pri">Conectar USB</button><span id="con" class="bdg">desconectado</span><span class="mu" id="info"></span></div></header>
 <div id="msg">Carregando configuração…</div>
 <div class="semusb" id="semusb"><b>Ligue o ESP32 no cabo USB e clique em "Conectar USB".</b><br>
 Escolha a porta COM do ESP32 (CP210x ou CH340). Feche o Monitor Serial do Arduino IDE antes: só um programa pode usar a porta.<br>
@@ -322,11 +322,11 @@ Escolha a porta COM do ESP32 (CP210x ou CH340). Feche o Monitor Serial do Arduin
 <button class="mcard" data-go="vvFc"><b>FCIOM (A162)</b><span>FH4 · módulo de luzes dianteiras: acorda o módulo e confirma que ele responde pela CAN do chassi (X1:1 H / X1:5 L, 500 kbps) · pedidos de diagnóstico Volvo</span></button>
 <div class="mcard off"><b>CCIOM / RCIOM / VMCU</b><span>Mesma rede do chassi</span><span class="soon">em desenvolvimento</span></div>
 </div>
+</div>
 <div id="mrcIveco" style="display:none">
 <div class="crumb"><a data-crumb="home">ECU</a> › <b style="color:var(--tx)">Iveco</b></div>
 <div class="mgrid">
 <button class="mcard" data-go="ivEdc"><b>EDC7 UC31</b><span>Stralis · motor J1939 a 250 kbps: identificação, horas/km, falhas DM2 e varredura de endereços (Address Claim)</span></button>
-</div>
 </div>
 </div>
 </section>
@@ -607,7 +607,7 @@ Escolha a porta COM do ESP32 (CP210x ou CH340). Feche o Monitor Serial do Arduin
 </div>
 <div class="sys-box">
 <h3>Informações</h3>
-<div class="mu">Petterson Tools · PT CAN Lab v2.12 (PT-CAN-01) — ECU › Mercedes › GS (diagnóstico KWP 4F5/4F4) · ECU › Volvo › FCIOM (teste de comunicação) · aviso de ACK na transmissão · ECU › Mercedes › Painel Sprinter (CAN 500 kbps), ECU › Cummins, parâmetros J1939</div>
+<div class="mu">Petterson Tools · PT CAN Lab v2.13 (PT-CAN-01) — ECU › Mercedes › GS (diagnóstico KWP 4F5/4F4) · ECU › Volvo › FCIOM (teste de comunicação) · aviso de ACK na transmissão · ECU › Mercedes › Painel Sprinter (CAN 500 kbps), ECU › Cummins, parâmetros J1939</div>
 <div class="mu">ESP32 + MCP2515 + TJA1050 · J1939 250 kbps</div>
 <div class="mu" id="sysHeap"></div>
 </div>
