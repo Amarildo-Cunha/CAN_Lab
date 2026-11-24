@@ -155,7 +155,7 @@ table{font-size:13px}
 #serLog{max-height:30vh}.noack b{color:var(--c1)}.noack span{flex:1;line-height:1.5}
 footer{margin:28px 28px 0}
 </style></head><body><div class="wrapx">
-<header><div class="brand">PETTERSON <b>TOOLS</b></div><div class="hrow"><h1>CAN Lab <small>v2.11 · USB</small></h1><button id="bUsb" class="pri">Conectar USB</button><span id="con" class="bdg">desconectado</span><span class="mu" id="info"></span></div></header>
+<header><div class="brand">PETTERSON <b>TOOLS</b></div><div class="hrow"><h1>CAN Lab <small>v2.12 · USB</small></h1><button id="bUsb" class="pri">Conectar USB</button><span id="con" class="bdg">desconectado</span><span class="mu" id="info"></span></div></header>
 <div id="msg">Carregando configuração…</div>
 <div class="semusb" id="semusb"><b>Ligue o ESP32 no cabo USB e clique em "Conectar USB".</b><br>
 Escolha a porta COM do ESP32 (CP210x ou CH340). Feche o Monitor Serial do Arduino IDE antes: só um programa pode usar a porta.<br>
@@ -286,6 +286,7 @@ Escolha a porta COM do ESP32 (CP210x ou CH340). Feche o Monitor Serial do Arduin
 <button class="mcard" data-brand="cummins"><b>Cummins</b><span>CM2150 · CM850 · J1939 padrão (identificação, parâmetros, falhas)</span></button>
 <button class="mcard" data-brand="mercedes"><b>Mercedes-Benz</b><span>GS câmbio — diagnóstico KWP 4F5/4F4 (500 kbps) · Painel Sprinter T1N (CAN 500 kbps) · MR-PLD Euro 3 (Motor-CAN ISO 11992)</span></button>
 <button class="mcard" data-brand="volvo"><b>Volvo</b><span>FH4 · FCIOM (módulo de luzes dianteiras, CAN do chassi 500 kbps)</span></button>
+<button class="mcard" data-brand="iveco"><b>Iveco</b><span>EDC7 UC31 (Stralis) · J1939: identificação, horas/km, falhas DM2, address claim</span></button>
 <div class="mcard off"><b>Outras marcas</b><span>Entram aqui conforme formos criando as funções</span></div>
 </div>
 </div>
@@ -320,6 +321,12 @@ Escolha a porta COM do ESP32 (CP210x ou CH340). Feche o Monitor Serial do Arduin
 <div class="mgrid">
 <button class="mcard" data-go="vvFc"><b>FCIOM (A162)</b><span>FH4 · módulo de luzes dianteiras: acorda o módulo e confirma que ele responde pela CAN do chassi (X1:1 H / X1:5 L, 500 kbps) · pedidos de diagnóstico Volvo</span></button>
 <div class="mcard off"><b>CCIOM / RCIOM / VMCU</b><span>Mesma rede do chassi</span><span class="soon">em desenvolvimento</span></div>
+</div>
+<div id="mrcIveco" style="display:none">
+<div class="crumb"><a data-crumb="home">ECU</a> › <b style="color:var(--tx)">Iveco</b></div>
+<div class="mgrid">
+<button class="mcard" data-go="ivEdc"><b>EDC7 UC31</b><span>Stralis · motor J1939 a 250 kbps: identificação, horas/km, falhas DM2 e varredura de endereços (Address Claim)</span></button>
+</div>
 </div>
 </div>
 </section>
@@ -423,6 +430,27 @@ Escolha a porta COM do ESP32 (CP210x ou CH340). Feche o Monitor Serial do Arduin
 <p class="mu">Bytes do serviço em hex, sem o PCI (o tamanho e o multi-frame são montados sozinhos). Ex.: <code>21 F0</code> · <code>1A 80</code> · <code>3E 01</code> · o <code>2C …</code> capturado do XCOM. A comunicação abre sozinha (canal em NORMAL) e fecha no botão Fechar ou após 5 min parada.</p>
 <div class="row" style="gap:8px"><input id="kwpReq" style="flex:1;font-family:monospace" placeholder="21 F0"><button id="kwpSend" class="btn-ok">Enviar</button></div>
 <pre id="kwpLog" style="max-height:280px;overflow:auto;margin-top:8px;font-size:12px;white-space:pre-wrap"></pre>
+</div>
+</section>
+
+<!-- v2.12: Iveco EDC7 UC31 -->
+<section class="pg" id="ivEdc">
+<div class="crumb"><a data-crumb="home">ECU</a> › <a data-crumb="iveco">Iveco</a> › <b style="color:var(--tx)">EDC7 UC31</b></div>
+<div class="sc">
+<div class="sh"><span class="dot" id="ivDot" style="background:var(--mu)"></span>Pedidos J1939 ao EDC7 (SA 00) — leitura</div>
+<p class="mu">A ferramenta pede ao motor (como SA F9) as informações padrão J1939. O canal vai para <b>Normal a 250 kbps</b> durante a leitura e volta como estava no fim. Só leitura — nada é alterado.</p>
+<div class="row" style="margin:10px 0;gap:10px;flex-wrap:wrap">
+<button class="pri" id="ivId">Ler identificação / horas / km</button>
+<button id="ivDm2">Ler falhas DM2 (inativas)</button>
+<button id="ivAc">Varrer endereços (Address Claim)</button>
+<span class="mu" id="ivSt"></span>
+</div>
+<div class="wrap" style="max-height:none"><table class="ecu-tbl"><thead><tr><th>PGN</th><th>Informação</th><th>Valor</th><th>Bytes recebidos</th></tr></thead><tbody id="ivRows"><tr><td colspan="4" class="mu">Clique num dos botões acima.</td></tr></tbody></table></div>
+</div>
+<div class="sc" style="margin-top:14px">
+<div class="sh"><span class="dot" style="background:var(--mu)"></span>Falhas (DM1/DM2) — SPNs próprios do EDC7</div>
+<p class="mu">O EDC7 Iveco usa códigos próprios (SPN fora da faixa J1939 padrão). A tabela mostra SPN, FMI e contador (OC) crus; para o nome de cada falha, cruzar com o Iveco E.A.SY. As falhas ATIVAS ao vivo continuam na aba <b>Falhas</b>.</p>
+<div class="wrap" style="max-height:none"><table class="ecu-tbl"><thead><tr><th>Origem</th><th>SPN</th><th>FMI</th><th>OC</th><th>Bytes</th></tr></thead><tbody id="ivDtc"><tr><td colspan="5" class="mu">Use "Ler falhas DM2" acima.</td></tr></tbody></table></div>
 </div>
 </section>
 
@@ -579,7 +607,7 @@ Escolha a porta COM do ESP32 (CP210x ou CH340). Feche o Monitor Serial do Arduin
 </div>
 <div class="sys-box">
 <h3>Informações</h3>
-<div class="mu">Petterson Tools · PT CAN Lab v2.11 (PT-CAN-01) — ECU › Mercedes › GS (diagnóstico KWP 4F5/4F4) · ECU › Volvo › FCIOM (teste de comunicação) · aviso de ACK na transmissão · ECU › Mercedes › Painel Sprinter (CAN 500 kbps), ECU › Cummins, parâmetros J1939</div>
+<div class="mu">Petterson Tools · PT CAN Lab v2.12 (PT-CAN-01) — ECU › Mercedes › GS (diagnóstico KWP 4F5/4F4) · ECU › Volvo › FCIOM (teste de comunicação) · aviso de ACK na transmissão · ECU › Mercedes › Painel Sprinter (CAN 500 kbps), ECU › Cummins, parâmetros J1939</div>
 <div class="mu">ESP32 + MCP2515 + TJA1050 · J1939 250 kbps</div>
 <div class="mu" id="sysHeap"></div>
 </div>
@@ -983,12 +1011,12 @@ $('#bNoAck').onclick=()=>cmd('m normal');
 $$('[data-c]').forEach(b=>b.onclick=()=>cmd(b.dataset.c));
 $('#xt').onchange=e=>cmd('k '+e.target.value);
 
-const ECU_PGS=['mrc','ecu','sim','kwp','cmId','cmPar','mbSp','vvFc','mbGs'];  // v2.8: + mbGs  // v2.7: + vvFc  // v2.5: + mbSp  // v1.3: páginas do grupo ECU (v1.4: + kwp)
+const ECU_PGS=['mrc','ecu','sim','kwp','cmId','cmPar','mbSp','vvFc','mbGs','ivEdc'];  // v2.12: + ivEdc  // v2.8: + mbGs  // v2.7: + vvFc  // v2.5: + mbSp  // v1.3: páginas do grupo ECU (v1.4: + kwp)
 function go(p){tab=p;if(p==='cmPar')setTimeout(parAtualiza,50);const g=ECU_PGS.includes(p)?'mrc':p;$$('.tab').forEach(b=>b.classList.toggle('on',b.dataset.p==g));$$('.pg').forEach(s=>s.classList.toggle('on',s.id==p));
  if(p==='sys')updFs();if(p==='cfg')renderCfgList();}
 $$('.tab').forEach(b=>b.onclick=()=>{if(b.dataset.p==='mrc')ecuMenu('home');else go(b.dataset.p)});
 // v1.3: menu ECU por marca
-function ecuMenu(v){go('mrc');$('#mrcHome').style.display=v==='home'?'':'none';$('#mrcScania').style.display=v==='scania'?'':'none';$('#mrcCummins').style.display=v==='cummins'?'':'none';$('#mrcMercedes').style.display=v==='mercedes'?'':'none';$('#mrcVolvo').style.display=v==='volvo'?'':'none';}
+function ecuMenu(v){go('mrc');$('#mrcHome').style.display=v==='home'?'':'none';$('#mrcScania').style.display=v==='scania'?'':'none';$('#mrcCummins').style.display=v==='cummins'?'':'none';$('#mrcMercedes').style.display=v==='mercedes'?'':'none';$('#mrcVolvo').style.display=v==='volvo'?'':'none';$('#mrcIveco').style.display=v==='iveco'?'':'none';}
 document.addEventListener('click',e=>{const c=e.target.closest('[data-crumb]');if(c){ecuMenu(c.dataset.crumb);return}
  const br=e.target.closest('[data-brand]');if(br){ecuMenu(br.dataset.brand);return}
  const g=e.target.closest('.mcard[data-go]');if(g)go(g.dataset.go);});
@@ -1887,6 +1915,65 @@ document.addEventListener('click',e=>{const b=e.target.closest('[data-gskwp]');i
 $('#gsMap21').onclick=gsScan21;
 $('#gsMapPara').onclick=()=>{gsStop=true;$('#gsSt').textContent='parando…'};
 $('#gsLivreB').onclick=()=>{const v=$('#gsLivre').value.trim();if(/^([0-9a-f]{1,2}\s*)+$/i.test(v))gsKwp(v);else msg('Pedido livre do GS: bytes hex do serviço, ex. 21 01')};
+// ===================== v2.12: Iveco EDC7 UC31 — pedidos J1939 =====================
+const IV_PGNS=[0xFEEB,0xFDC5,0xFEDA,0xFEEC,0xFEE5,0xFEC1,0xFEE9,0xFEE3];
+function ivRow(pgn,nome,v,raw){return '<tr><td class="fid">'+hx(pgn,4)+'</td><td class="fname">'+nome+'</td><td class="fval" style="color:var(--tx);font-family:inherit">'+v+'</td><td class="mu">'+raw+'</td></tr>'}
+async function ivPrep(){let modo='normal',kbps=250;try{const j=await(await fetch('/api/status')).json();modo=j.modo;kbps=j.kbps}catch(e){}
+ const ant={modo,kbps};if(kbps!=250)await cmd('v 250');if(modo!=='normal')await cmd('m normal');await fcSleep(200);return ant}
+async function ivRest(a){if(!a)return;if(a.kbps!=250)await cmd('v '+a.kbps);if(a.modo!=='normal')await cmd('m '+a.modo)}
+async function ivLerId(){
+ if(!USB.on){msg('Conecte o USB primeiro');return}
+ const b=$('#ivId');b.disabled=true;$('#ivDot').style.background='var(--wa)';$('#ivRows').innerHTML='';
+ const ant=await ivPrep();const linhas=[];
+ for(const pgn of IV_PGNS){
+  const item=IDP.find(x=>x[0]===pgn);if(!item)continue;const[,nome,fmt]=item;
+  $('#ivSt').textContent='Lendo '+nome+'…';
+  let r=null;try{r=await j1939Pede(pgn,0xFF,pgn===0xFEE3?6000:1800)}catch(e){}
+  let v='<span class="mu">sem resposta</span>',raw='';
+  if(r&&r.ack!==undefined)v='<span class="mu">o módulo recusou ('+(['ACK','NACK — não suportado','acesso negado','ocupado'][r.ack]||r.ack)+')</span>';
+  else if(r){try{v=fmt(r)}catch(e){v='?'}raw='SA '+hx(r.sa,2)+' · '+r.d.length+' B<br><span style="font-family:monospace;font-size:11px">'+r.d.slice(0,48).map(x=>hx(x,2)).join(' ')+(r.d.length>48?' …':'')+'</span>'}
+  linhas.push(ivRow(pgn,nome,v,raw));$('#ivRows').innerHTML=linhas.join('');
+ }
+ await ivRest(ant);$('#ivSt').textContent='Concluído '+new Date().toLocaleTimeString('pt-BR');$('#ivDot').style.background='var(--ok)';b.disabled=false;
+}
+function ivDecodeDTC(d){ // d = payload DM (lamp byte0,1 + DTCs 4 bytes)
+ const out=[];for(let i=2;i+3<d.length;i+=4){const b=d.slice(i,i+4);
+  if(b[0]===0xFF&&b[1]===0xFF&&b[2]===0xFF)continue;
+  const spn=b[0]|(b[1]<<8)|((b[2]>>5)<<16),fmi=b[2]&0x1F,oc=b[3]&0x7F;
+  if(!spn&&!fmi)continue;out.push({spn,fmi,oc,b})}
+ return out}
+async function ivLerDm2(){
+ if(!USB.on){msg('Conecte o USB primeiro');return}
+ const b=$('#ivDm2');b.disabled=true;$('#ivSt').textContent='Lendo DM2…';$('#ivDtc').innerHTML='<tr><td colspan="5" class="mu">pedindo…</td></tr>';
+ const ant=await ivPrep();
+ let r=null;try{r=await j1939Pede(0xFECB,0xFF,2500)}catch(e){}
+ await ivRest(ant);b.disabled=false;$('#ivSt').textContent='';
+ if(!r||r.ack!==undefined){$('#ivDtc').innerHTML='<tr><td colspan="5" class="mu">'+(r&&r.ack!==undefined?'o módulo recusou o pedido de DM2':'sem resposta de DM2 (o EDC7 pode não guardar falhas inativas)')+'</td></tr>';return}
+ const dtcs=ivDecodeDTC(r.d);
+ $('#ivRows').innerHTML=ivRow(0xFECB,'DM2 falhas inativas',dtcs.length+' falha(s)','SA '+hx(r.sa,2)+' · '+r.d.length+' B')+ $('#ivRows').innerHTML.replace('<tr><td colspan="4" class="mu">Clique num dos botões acima.</td></tr>','');
+ $('#ivDtc').innerHTML=dtcs.length?dtcs.map(x=>'<tr><td>DM2</td><td><code>'+x.spn+'</code> (0x'+hx(x.spn,5)+')</td><td>'+x.fmi+'</td><td>'+x.oc+'</td><td><code>'+x.b.map(y=>hx(y,2)).join(' ')+'</code></td></tr>').join(''):'<tr><td colspan="5" class="mu">Nenhuma falha inativa (DM2 vazio).</td></tr>';
+}
+async function ivAddrClaim(){
+ if(!USB.on){msg('Conecte o USB primeiro');return}
+ const b=$('#ivAc');b.disabled=true;$('#ivSt').textContent='Varrendo endereços…';
+ const ant=await ivPrep();
+ let s=await cabecaFrames();
+ await fcCmd('w 18EAFFF9 00 EE 00'); // request Address Claim, global
+ const vis={};const t0=Date.now();
+ while(Date.now()-t0<3000){
+  const j=await framesDesde(s);s=j.h;
+  for(const f of j.f){const[t,id,fl,len,dh]=f;if(!(fl&1))continue;const pf=(id>>>16)&255,sa=id&255;
+   if(pf===0xEE){const d=parseHex(dh);vis[sa]=d}}
+  await fcSleep(80)}
+ await ivRest(ant);b.disabled=false;$('#ivSt').textContent='';
+ const sas=Object.keys(vis).map(Number).sort((a,b)=>a-b);
+ const nm={0x00:'motor (EDC7)',0x0F:'freio motor',0x29:'freio motor',0x03:'câmbio',0x3D:'SCR/DCU (emissões)',0x17:'painel',0x0B:'ABS/EBS'};
+ const linhas=sas.length?sas.map(sa=>{const d=vis[sa];const mfg=((d[4]|d[5]<<8)>>5)&0x7FF;
+  return ivRow(0xEE00,'Address Claim · SA '+hx(sa,2)+(nm[sa]?' ('+nm[sa]+')':''),'NAME '+d.map(x=>hx(x,2)).join(' ')+'<br><span class="mu">fabricante J1939 nº '+mfg+'</span>','')}).join('')
+  :'<tr><td colspan="4" class="mu">Ninguém respondeu ao Address Claim — o EDC7 pode não implementar EE00 (na captura ele não mandava). Os endereços vistos vêm do tráfego: use a aba IDs.</td></tr>';
+ $('#ivRows').innerHTML=linhas;
+}
+$('#ivId').onclick=ivLerId;$('#ivDm2').onclick=ivLerDm2;$('#ivAc').onclick=ivAddrClaim;
 $('#fcTeste').onclick=fcTeste;
 document.addEventListener('click',e=>{const b=e.target.closest('[data-fcdg]');if(b)fcDiag(b.dataset.fcdg)});
 $('#fcLivreB').onclick=()=>{const v=$('#fcLivre').value.trim();if(/^([0-9a-f]{2}\s*)+$/i.test(v))fcDiag(v);else msg('Pedido livre: digite bytes hex, ex. 03 22 F1 87')};
