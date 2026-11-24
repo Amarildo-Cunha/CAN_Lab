@@ -155,7 +155,7 @@ table{font-size:13px}
 #serLog{max-height:30vh}.noack b{color:var(--c1)}.noack span{flex:1;line-height:1.5}
 footer{margin:28px 28px 0}
 </style></head><body><div class="wrapx">
-<header><div class="brand">PETTERSON <b>TOOLS</b></div><div class="hrow"><h1>CAN Lab <small>v2.7 · USB</small></h1><button id="bUsb" class="pri">Conectar USB</button><span id="con" class="bdg">desconectado</span><span class="mu" id="info"></span></div></header>
+<header><div class="brand">PETTERSON <b>TOOLS</b></div><div class="hrow"><h1>CAN Lab <small>v2.8 · USB</small></h1><button id="bUsb" class="pri">Conectar USB</button><span id="con" class="bdg">desconectado</span><span class="mu" id="info"></span></div></header>
 <div id="msg">Carregando configuração…</div>
 <div class="semusb" id="semusb"><b>Ligue o ESP32 no cabo USB e clique em "Conectar USB".</b><br>
 Escolha a porta COM do ESP32 (CP210x ou CH340). Feche o Monitor Serial do Arduino IDE antes: só um programa pode usar a porta.<br>
@@ -284,7 +284,7 @@ Escolha a porta COM do ESP32 (CP210x ou CH340). Feche o Monitor Serial do Arduin
 <div class="mgrid">
 <button class="mcard" data-brand="scania"><b>Scania</b><span>EMS S6/S7/S8 · painel ICL · coordenador COO</span></button>
 <button class="mcard" data-brand="cummins"><b>Cummins</b><span>CM2150 · CM850 · J1939 padrão (identificação, parâmetros, falhas)</span></button>
-<button class="mcard" data-brand="mercedes"><b>Mercedes-Benz</b><span>Painel Sprinter T1N (CAN 500 kbps) · MR-PLD Euro 3 (Motor-CAN ISO 11992)</span></button>
+<button class="mcard" data-brand="mercedes"><b>Mercedes-Benz</b><span>GS câmbio (CAN privada 500 kbps) · Painel Sprinter T1N (CAN 500 kbps) · MR-PLD Euro 3 (Motor-CAN ISO 11992)</span></button>
 <button class="mcard" data-brand="volvo"><b>Volvo</b><span>FH4 · FCIOM (módulo de luzes dianteiras, CAN do chassi 500 kbps)</span></button>
 <div class="mcard off"><b>Outras marcas</b><span>Entram aqui conforme formos criando as funções</span></div>
 </div>
@@ -311,6 +311,7 @@ Escolha a porta COM do ESP32 (CP210x ou CH340). Feche o Monitor Serial do Arduin
 <div class="crumb"><a data-crumb="home">ECU</a> › <b style="color:var(--tx)">Mercedes-Benz</b></div>
 <div class="mgrid">
 <button class="mcard" data-go="mbSp"><b>Painel Sprinter</b><span>T1N CDI 2000–2006 (A 001 446 85 21): rotação, temperatura e lâmpadas pela CAN a 500 kbps · posições livres para testar IDs</span></button>
+<button class="mcard" data-go="mbGs"><b>GS — câmbio (WABCO EPS3)</b><span>CAN privada B06/B11 a 500 kbps: varredura de pedidos de diagnóstico para ver se o GS responde · pedido avulso</span></button>
 <div class="mcard off"><b>MR-PLD — Motor-CAN</b><span>ISO 11992 a 125 kbps (níveis de 8/16 V): precisa do receptor LM393/NPN ou do transceptor NCV7390 na 2ª placa</span><span class="soon">aguardando hardware</span></div>
 </div>
 </div>
@@ -422,6 +423,53 @@ Escolha a porta COM do ESP32 (CP210x ou CH340). Feche o Monitor Serial do Arduin
 <p class="mu">Bytes do serviço em hex, sem o PCI (o tamanho e o multi-frame são montados sozinhos). Ex.: <code>21 F0</code> · <code>1A 80</code> · <code>3E 01</code> · o <code>2C …</code> capturado do XCOM. A comunicação abre sozinha (canal em NORMAL) e fecha no botão Fechar ou após 5 min parada.</p>
 <div class="row" style="gap:8px"><input id="kwpReq" style="flex:1;font-family:monospace" placeholder="21 F0"><button id="kwpSend" class="btn-ok">Enviar</button></div>
 <pre id="kwpLog" style="max-height:280px;overflow:auto;margin-top:8px;font-size:12px;white-space:pre-wrap"></pre>
+</div>
+</section>
+
+<!-- v2.8: Mercedes GS — varredura na CAN privada -->
+<section class="pg" id="mbGs">
+<div class="crumb"><a data-crumb="home">ECU</a> › <a data-crumb="mercedes">Mercedes-Benz</a> › <b style="color:var(--tx)">GS (câmbio)</b></div>
+<div class="sys-box">
+<h3>GS WABCO EPS3 — varredura de diagnóstico na CAN privada (500 kbps, ID 11 bits)</h3>
+<p class="mu">Ligação: <b>CAN-H B06</b>, <b>CAN-L B11</b>, GND do GS (A02/A05/B20) no GND do analisador. Sozinho na bancada o GS transmite <code>00A</code>, <code>00B</code>, <code>00C</code>, <code>03C</code> (5 ms) e <code>22C</code> (10 ms). A varredura manda pedidos de diagnóstico em cada ID da faixa e registra <b>qualquer ID novo</b> que aparecer e <b>qualquer mudança nos dados</b> das mensagens normais do GS. Durante a varredura o canal fica em <b>NORMAL a 500 kbps</b> e volta como estava no fim.</p>
+<p class="warn">⚠ Antes de varrer: bloco de válvulas (A92) e ar comprimido <b>desligados</b>. Evite faixas abaixo de 600 — IDs baixos são mensagens de controle e podem ser lidas como comando.</p>
+<div class="row" style="gap:10px;flex-wrap:wrap;align-items:center">
+<label class="mu">De <input id="gsDe" value="600" style="width:60px"></label>
+<label class="mu">até <input id="gsAte" value="7FF" style="width:60px"></label>
+<label class="mu">intervalo <input id="gsInt" value="30" style="width:50px"> ms</label>
+</div>
+<div class="row" style="gap:12px;flex-wrap:wrap;margin-top:6px">
+<label class="mu"><input type="checkbox" class="gsP" value="02 10 81" checked> KWP sessão padrão <code>10 81</code></label>
+<label class="mu"><input type="checkbox" class="gsP" value="02 10 01" checked> UDS sessão padrão <code>10 01</code></label>
+<label class="mu"><input type="checkbox" class="gsP" value="02 3E 00"> TesterPresent <code>3E 00</code></label>
+<label class="mu"><input type="checkbox" class="gsP" value="02 1A 86"> identificação Mercedes <code>1A 86</code></label>
+<label class="mu"><input type="checkbox" class="gsP" value="02 21 01"> leitura local <code>21 01</code></label>
+</div>
+<div class="row" style="gap:10px;margin-top:10px">
+<button id="gsIni" class="btn-ok" style="font-size:15px;padding:10px 20px">▶ Iniciar varredura</button>
+<button id="gsPara">■ Parar</button>
+<span id="gsSt" class="bdg">parado</span>
+<span id="gsPr" class="mu"></span>
+</div>
+<div id="gsRes" style="margin-top:10px"></div>
+</div>
+<div class="sys-box" style="margin-top:14px">
+<h3>Mensagens normais do GS (referência no início)</h3>
+<div class="wrap" style="max-height:none"><table class="ecu-tbl"><thead><tr><th>ID</th><th>Período</th><th>Dados no início</th><th>Dados agora</th></tr></thead><tbody id="gsBase"><tr><td colspan="4" class="mu">Aparece ao iniciar a varredura.</td></tr></tbody></table></div>
+</div>
+<div class="sys-box" style="margin-top:14px">
+<h3>Achados — IDs novos e dados que mudaram</h3>
+<div class="wrap" style="max-height:none"><table class="ecu-tbl"><thead><tr><th>Hora</th><th>O que apareceu</th><th>Dados</th><th>Logo depois do pedido</th><th>Interpretação</th></tr></thead><tbody id="gsAch"><tr><td colspan="5" class="mu">Nada ainda.</td></tr></tbody></table></div>
+</div>
+<div class="sys-box" style="margin-top:14px">
+<h3>Pedido avulso (para repetir um achado)</h3>
+<p class="mu">Manda um frame de 11 bits e escuta 1,5 s mostrando tudo que não é mensagem normal do GS. Se a resposta for longa (1º byte <code>1x</code>), manda o "pode continuar" <code>30 00 00</code> no mesmo ID do pedido.</p>
+<div class="row" style="gap:8px">
+<input id="gsAvId" placeholder="ID, ex.: 7E1" style="width:90px">
+<input id="gsAvD" placeholder="bytes, ex.: 02 10 81" style="width:240px">
+<button id="gsAvB">Enviar e escutar</button>
+</div>
+<div class="wrap" style="max-height:none;margin-top:10px"><table class="ecu-tbl"><thead><tr><th>Hora</th><th>Pedido</th><th>Frames recebidos (fora os normais)</th><th>Interpretação</th></tr></thead><tbody id="gsAv"></tbody></table></div>
 </div>
 </section>
 
@@ -547,7 +595,7 @@ Escolha a porta COM do ESP32 (CP210x ou CH340). Feche o Monitor Serial do Arduin
 </div>
 <div class="sys-box">
 <h3>Informações</h3>
-<div class="mu">Petterson Tools · PT CAN Lab v2.7 (PT-CAN-01) — ECU › Volvo › FCIOM (teste de comunicação) · aviso de ACK na transmissão · ECU › Mercedes › Painel Sprinter (CAN 500 kbps), ECU › Cummins, parâmetros J1939</div>
+<div class="mu">Petterson Tools · PT CAN Lab v2.8 (PT-CAN-01) — ECU › Mercedes › GS (varredura de diagnóstico) · ECU › Volvo › FCIOM (teste de comunicação) · aviso de ACK na transmissão · ECU › Mercedes › Painel Sprinter (CAN 500 kbps), ECU › Cummins, parâmetros J1939</div>
 <div class="mu">ESP32 + MCP2515 + TJA1050 · J1939 250 kbps</div>
 <div class="mu" id="sysHeap"></div>
 </div>
@@ -951,7 +999,7 @@ $('#bNoAck').onclick=()=>cmd('m normal');
 $$('[data-c]').forEach(b=>b.onclick=()=>cmd(b.dataset.c));
 $('#xt').onchange=e=>cmd('k '+e.target.value);
 
-const ECU_PGS=['mrc','ecu','sim','kwp','cmId','cmPar','mbSp','vvFc'];  // v2.7: + vvFc  // v2.5: + mbSp  // v1.3: páginas do grupo ECU (v1.4: + kwp)
+const ECU_PGS=['mrc','ecu','sim','kwp','cmId','cmPar','mbSp','vvFc','mbGs'];  // v2.8: + mbGs  // v2.7: + vvFc  // v2.5: + mbSp  // v1.3: páginas do grupo ECU (v1.4: + kwp)
 function go(p){tab=p;if(p==='cmPar')setTimeout(parAtualiza,50);const g=ECU_PGS.includes(p)?'mrc':p;$$('.tab').forEach(b=>b.classList.toggle('on',b.dataset.p==g));$$('.pg').forEach(s=>s.classList.toggle('on',s.id==p));
  if(p==='sys')updFs();if(p==='cfg')renderCfgList();}
 $$('.tab').forEach(b=>b.onclick=()=>{if(b.dataset.p==='mrc')ecuMenu('home');else go(b.dataset.p)});
@@ -1767,6 +1815,107 @@ async function fcDiag(req){
  }catch(e){row.children[2].textContent='erro: '+e}
  finally{await fcRest(ant);fcBusy=false}
 }
+// ===================== v2.8: Mercedes GS — varredura de diagnóstico na CAN privada =====================
+let gsBusy=false,gsStop=false,gsBaseMap={};
+const gsKey=(id,ext)=>(ext?'X':'S')+id;
+const gsIdStr=(id,ext)=>ext?hx(id,8):hx(id,3);
+const gsFmt=d=>(d.match(/../g)||[]).join(' ');
+function gsInterp(dh){const d=parseHex(dh);if(!d.length)return'';
+ // tenta ISO-TP quadro único: 1º byte = tamanho
+ let p=d,pre='';const pci=d[0]>>4;
+ if(pci===0&&(d[0]&15)>0&&(d[0]&15)<8){p=d.slice(1,1+(d[0]&15));pre='ISO-TP: '}
+ else if(pci===1)return 'ISO-TP 1º quadro de resposta longa ('+(((d[0]&15)<<8)|d[1])+' bytes) — use o pedido avulso';
+ else if(pci===3)return 'controle de fluxo ISO-TP';
+ const s=p[0];
+ if(s===0x7F)return pre+'NEGATIVA ao serviço '+hx(p[1],2)+' (código '+hx(p[2],2)+') — o GS entende diagnóstico neste ID!';
+ if(s===0x50)return pre+'SESSÃO ABERTA ('+hx(p[1]||0,2)+')';
+ if(s===0x7E)return pre+'TesterPresent OK';
+ if(s===0x5A)return pre+'identificação (1A '+hx(p[1]||0,2)+')';
+ if(s===0x61)return pre+'leitura local (21 '+hx(p[1]||0,2)+')';
+ if(s>=0x40&&s<0x7F)return pre+'possível resposta positiva ao serviço '+hx(s-0x40,2);
+ return ''}
+async function gsPrep(){const j=await(await fetch('/api/status')).json();const ant={kbps:j.kbps,modo:j.modo};
+ if(j.kbps!=500)await fcCmd('v 500');if(j.modo!='normal')await fcCmd('m normal');await fcSleep(300);return ant}
+async function gsIds(){return (await(await fetch('/api/ids')).json()).e}
+function gsAcha(o){const tb=$('#gsAch');if(tb.dataset.v!=='1'){tb.innerHTML='';tb.dataset.v='1'}
+ const tr=document.createElement('tr');tr.innerHTML='<td>'+new Date().toLocaleTimeString()+'</td><td>'+o.oque+'</td><td><code>'+o.dados+'</code></td><td><code>'+o.ped+'</code></td><td><b style="color:var(--ok)">'+(o.int||'')+'</b></td>';tb.prepend(tr)}
+async function gsVarre(){
+ if(gsBusy)return;gsBusy=true;gsStop=false;
+ const st=$('#gsSt'),pr=$('#gsPr'),res=$('#gsRes');
+ const de=parseInt($('#gsDe').value,16),ate=parseInt($('#gsAte').value,16),iv=Math.max(0,parseInt($('#gsInt').value)||0);
+ const peds=[...$$('.gsP')].filter(c=>c.checked).map(c=>c.value);
+ if(!(de>=0&&ate<=0x7FF&&de<=ate)||!peds.length){msg('Varredura: faixa de 000 a 7FF e pelo menos um pedido marcado');gsBusy=false;return}
+ if(de<0x600&&!confirm('A faixa começa abaixo de 600: IDs baixos podem ser lidos pelo GS como comando. Continuar?')){gsBusy=false;return}
+ st.className='bdg';st.textContent='preparando…';res.innerHTML='';$('#gsAch').innerHTML='<tr><td colspan="5" class="mu">Nada ainda.</td></tr>';$('#gsAch').dataset.v='';
+ let ant=null,falhas=0,acks=0,env=0,achados=0;const t0=Date.now();
+ try{
+  ant=await gsPrep();
+  // referência: IDs ativos agora
+  await fcSleep(800);
+  const e0=await gsIds();gsBaseMap={};
+  for(const x of e0){const[id,fl,len,n,per,d,mud,age]=x;if(age<1500)gsBaseMap[gsKey(id,fl&1)]={id,ext:fl&1,per,d0:d,d:d}}
+  const bk=Object.keys(gsBaseMap);
+  $('#gsBase').innerHTML=bk.length?bk.map(k=>{const b=gsBaseMap[k];return '<tr><td><code>'+gsIdStr(b.id,b.ext)+'</code></td><td>'+(b.per/10).toFixed(1)+' ms</td><td><code>'+gsFmt(b.d0)+'</code></td><td><code id="gsB_'+k+'">'+gsFmt(b.d0)+'</code></td></tr>'}).join(''):'<tr><td colspan="4" class="warn">Nenhuma mensagem do GS antes da varredura — confira ligação, alimentação e L15.</td></tr>';
+  const vistos={};let ultimo='',penult='';
+  const total=(ate-de+1)*peds.length;
+  st.textContent='varrendo…';
+  for(let id=de;id<=ate&&!gsStop;id++){
+   for(const p of peds){
+    if(gsStop)break;
+    const b=p.split(' ');while(b.length<8)b.push('00');
+    const ped=hx(id,3)+' '+b.join(' ');
+    const r=await fcCmd('w '+ped);env++;
+    const a=fcAck(r);if(a==='ack'){acks++;falhas=0}else if(a==='falhou'){falhas++}
+    penult=ultimo;ultimo=ped;
+    if(falhas>=5){res.innerHTML='<p class="warn">Parou: 5 envios seguidos <b>sem ACK</b> — ninguém está recebendo na rede (GS desligado, fio solto ou velocidade errada).</p>';gsStop=true;break}
+    if(iv)await fcSleep(iv);
+    // confere IDs
+    const e=await gsIds();
+    for(const x of e){const[xid,fl,len,n,per,d,mud,age]=x;const k=gsKey(xid,fl&1);
+     const b0=gsBaseMap[k];
+     if(!b0){ if(age<2000&&!vistos[k]){vistos[k]=1;achados++;
+       gsAcha({oque:'ID NOVO <code>'+gsIdStr(xid,fl&1)+'</code> ('+(fl&1?'29':'11')+' bits)',dados:gsFmt(d),ped:ultimo+(penult?'<br><span class="mu">anterior: '+penult+'</span>':''),int:gsInterp(d)})}
+     }else if(d!==b0.d){const kk=k+':'+d;b0.d=d;const el=document.getElementById('gsB_'+k);if(el)el.innerHTML='<span class="chg">'+gsFmt(d)+'</span>';
+       if(!vistos[kk]){vistos[kk]=1;achados++;gsAcha({oque:'DADOS MUDARAM em <code>'+gsIdStr(xid,fl&1)+'</code><br><span class="mu">antes '+gsFmt(b0.d0)+'</span>',dados:gsFmt(d),ped:ultimo+(penult?'<br><span class="mu">anterior: '+penult+'</span>':''),int:''})}}}
+    const s=Math.round((Date.now()-t0)/1000);
+    pr.textContent='ID '+hx(id,3)+' · '+env+'/'+total+' envios · '+acks+' com ACK · '+achados+' achado(s) · '+s+' s';
+   }
+  }
+  const sum='Varridos '+env+' pedidos ('+hx(de,3)+'–'+hx(Math.min(ate,de+Math.ceil(env/peds.length)-1),3)+'), '+acks+' com ACK.';
+  if(achados){st.className='bdg ok';st.textContent='✔ '+achados+' ACHADO(S)';res.innerHTML+='<p><b style="color:var(--ok)">O GS reagiu a algum pedido.</b> '+sum+' Repita o pedido da tabela no "Pedido avulso" para confirmar qual ID responde (a resposta pode ter vindo do pedido anterior).</p>'}
+  else{st.className='bdg '+(gsStop?'':'er');st.textContent=gsStop?'parado':'✖ NENHUMA RESPOSTA';res.innerHTML+='<p class="mu">'+sum+' Nenhum ID novo e nenhuma mudança nas mensagens do GS. Próximos: marcar outros pedidos (1A 86, 21 01), varrer 000–5FF com cuidado, ou o diagnóstico do GS fica só na linha K (KZProg) / na CAN pública.</p>'}
+ }catch(e){st.className='bdg er';st.textContent='erro';res.textContent='Erro: '+e}
+ finally{await fcRest(ant);gsBusy=false}
+}
+async function gsAvulso(){
+ if(gsBusy)return;const idS=$('#gsAvId').value.trim(),dS=$('#gsAvD').value.trim();
+ if(!/^[0-7]?[0-9a-f]{1,2}$/i.test(idS)||!/^([0-9a-f]{2}\s*)+$/i.test(dS)){msg('Pedido avulso: ID de 11 bits (até 7FF) e bytes hex');return}
+ gsBusy=true;const id=parseInt(idS,16);const b=dS.split(/\s+/);while(b.length<8)b.push('00');const ped=hx(id,3)+' '+b.slice(0,8).join(' ');
+ const row=document.createElement('tr');row.innerHTML='<td>'+new Date().toLocaleTimeString()+'</td><td><code>'+ped+'</code></td><td class="mu">enviando…</td><td></td>';$('#gsAv').prepend(row);
+ let ant=null;
+ try{
+  ant=await gsPrep();
+  if(!Object.keys(gsBaseMap).length){const e0=await gsIds();for(const x of e0){const[xid,fl,len,n,per,d,mud,age]=x;if(age<1500)gsBaseMap[gsKey(xid,fl&1)]={id:xid,ext:fl&1,per,d0:d,d:d}}}
+  let s=await cabecaFrames();
+  const a=fcAck(await fcCmd('w '+ped));
+  const vis=[],ints=[];let fcMandado=false;const t0=Date.now();
+  while(Date.now()-t0<1500){
+   const j=await framesDesde(s);s=j.h;
+   for(const f of j.f){const[t,fid,fl,len,dh]=f;const b0=gsBaseMap[gsKey(fid,fl&1)];
+    if(b0&&dh===b0.d0)continue;
+    if(vis.length<40)vis.push(gsIdStr(fid,fl&1)+' '+gsFmt(dh));
+    const it=gsInterp(dh);if(it&&!ints.includes(it))ints.push(it);
+    if(!b0&&!fcMandado&&(parseHex(dh)[0]>>4)===1){fcMandado=true;await fcCmd('w '+hx(id,3)+' 30 00 00 00 00 00 00 00')}}
+   await fcSleep(80)}
+  const c=row.children;
+  c[2].innerHTML=vis.length?'<code>'+vis.join('<br>')+'</code>':'<span class="warn">nada fora das mensagens normais</span>';
+  c[3].innerHTML=(a==='falhou'?'<span class="warn">pedido sem ACK</span> ':'')+(ints.length?'<b style="color:var(--ok)">'+ints.join(' · ')+'</b>':'');
+ }catch(e){row.children[2].textContent='erro: '+e}
+ finally{await fcRest(ant);gsBusy=false}
+}
+$('#gsIni').onclick=gsVarre;
+$('#gsPara').onclick=()=>{gsStop=true;$('#gsSt').textContent='parando…'};
+$('#gsAvB').onclick=gsAvulso;
 $('#fcTeste').onclick=fcTeste;
 document.addEventListener('click',e=>{const b=e.target.closest('[data-fcdg]');if(b)fcDiag(b.dataset.fcdg)});
 $('#fcLivreB').onclick=()=>{const v=$('#fcLivre').value.trim();if(/^([0-9a-f]{2}\s*)+$/i.test(v))fcDiag(v);else msg('Pedido livre: digite bytes hex, ex. 03 22 F1 87')};
