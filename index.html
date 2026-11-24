@@ -155,7 +155,7 @@ table{font-size:13px}
 #serLog{max-height:30vh}.noack b{color:var(--c1)}.noack span{flex:1;line-height:1.5}
 footer{margin:28px 28px 0}
 </style></head><body><div class="wrapx">
-<header><div class="brand">PETTERSON <b>TOOLS</b></div><div class="hrow"><h1>CAN Lab <small>v2.10 · USB</small></h1><button id="bUsb" class="pri">Conectar USB</button><span id="con" class="bdg">desconectado</span><span class="mu" id="info"></span></div></header>
+<header><div class="brand">PETTERSON <b>TOOLS</b></div><div class="hrow"><h1>CAN Lab <small>v2.11 · USB</small></h1><button id="bUsb" class="pri">Conectar USB</button><span id="con" class="bdg">desconectado</span><span class="mu" id="info"></span></div></header>
 <div id="msg">Carregando configuração…</div>
 <div class="semusb" id="semusb"><b>Ligue o ESP32 no cabo USB e clique em "Conectar USB".</b><br>
 Escolha a porta COM do ESP32 (CP210x ou CH340). Feche o Monitor Serial do Arduino IDE antes: só um programa pode usar a porta.<br>
@@ -438,6 +438,7 @@ Escolha a porta COM do ESP32 (CP210x ou CH340). Feche o Monitor Serial do Arduin
 <button data-gskwp="10 02">Abrir sessão (10 02)</button>
 <button data-gskwp="21 03">Dado local (21 03)</button>
 <button id="gsMap21">Mapear identificação (21 00–21 FF)</button>
+<button id="gsMapPara">■ Parar mapeamento</button>
 <button data-gskwp="1A 80">Identificação 1A 80 · experimental</button>
 <button data-gskwp="18 00 FF">Ler falhas 18 00 FF · experimental</button>
 </div>
@@ -578,7 +579,7 @@ Escolha a porta COM do ESP32 (CP210x ou CH340). Feche o Monitor Serial do Arduin
 </div>
 <div class="sys-box">
 <h3>Informações</h3>
-<div class="mu">Petterson Tools · PT CAN Lab v2.10 (PT-CAN-01) — ECU › Mercedes › GS (diagnóstico KWP 4F5/4F4) · ECU › Volvo › FCIOM (teste de comunicação) · aviso de ACK na transmissão · ECU › Mercedes › Painel Sprinter (CAN 500 kbps), ECU › Cummins, parâmetros J1939</div>
+<div class="mu">Petterson Tools · PT CAN Lab v2.11 (PT-CAN-01) — ECU › Mercedes › GS (diagnóstico KWP 4F5/4F4) · ECU › Volvo › FCIOM (teste de comunicação) · aviso de ACK na transmissão · ECU › Mercedes › Painel Sprinter (CAN 500 kbps), ECU › Cummins, parâmetros J1939</div>
 <div class="mu">ESP32 + MCP2515 + TJA1050 · J1939 250 kbps</div>
 <div class="mu" id="sysHeap"></div>
 </div>
@@ -1820,19 +1821,20 @@ function gsInterp(d){ // d = bytes já sem o cabeçalho 89
 // um pacote corrompido é descartado e o teste continua, em vez de abortar.
 async function gsFrames(s){try{const t=await(await fetch('/api/frames?s='+s)).text();return JSON.parse(t)}catch(e){return{h:s,f:[]}}}
 // manda 89+serviço em 4F5 e devolve {resp:[frames hex de 4F4], interp, ack}
-async function gsPede(bytes,ms){
+async function gsPede(bytes,ms,early){
  const full=[GS_HDR].concat(bytes);while(full.length<8)full.push(0xFF);
  const ped=full.slice(0,8).map(v=>hx(v,2)).join(' ');
  let s=(await gsFrames(4294967295)).h;
  const a=fcAck(await fcCmd('w '+hx(GS_TX,3)+' '+ped));
- const resp=[];let interp='';const t0=Date.now();
- while(Date.now()-t0<ms){
+ const resp=[];let interp='',pronto=false;const t0=Date.now();
+ while(Date.now()-t0<ms&&!pronto){
   const j=await gsFrames(s);s=j.h;
   for(const f of j.f){const[t,id,fl,len,dh]=f;if(fl&1)continue;if(id!==GS_RX)continue;
    const d=parseHex(dh);if(d[0]!==GS_HDR)continue;
    const body=d.slice(1);resp.push((dh.match(/../g)||[]).join(' '));
-   const it=gsInterp(body);if(it&&!interp)interp=it}
-  await fcSleep(60)}
+   const it=gsInterp(body);if(it&&!interp)interp=it;
+   if(early&&early(body))pronto=true}
+  if(!pronto)await fcSleep(40)}
  return {ped,resp,interp,ack:a}}
 async function gsKwp(req){
  if(gsBusy)return;gsBusy=true;
@@ -1854,31 +1856,36 @@ async function gsKwp(req){
  finally{await gsRest(ant);gsBusy=false}
 }
 // mapeia os identificadores de leitura (21 00–21 FF) — é como o KZProg puxa número Wabco, hardware, versão e software, sem seed/key
+let gsStop=false;
 async function gsScan21(){
- if(gsBusy)return;gsBusy=true;
- const st=$('#gsSt'),res=$('#gsRes');st.className='bdg';st.textContent='mapeando 21 xx…';res.innerHTML='';
- let ant=null;
+ if(gsBusy)return;gsBusy=true;gsStop=false;
+ const st=$('#gsSt'),res=$('#gsRes');st.className='bdg';st.textContent='mapeando…';
+ res.innerHTML='<div class="row" style="gap:10px;align-items:center"><div id="gsBar" style="flex:1;height:8px;background:#222;border-radius:4px;overflow:hidden"><div id="gsBarF" style="height:100%;width:0;background:var(--c1)"></div></div><span id="gsMp" class="mu"></span></div>'
+  +'<table class="ecu-tbl" style="margin-top:8px"><thead><tr><th>Local ID</th><th>Dados</th><th>Texto</th></tr></thead><tbody id="gsMapTb"><tr><td colspan="3" class="mu">procurando…</td></tr></tbody></table>';
+ const tb=$('#gsMapTb');let ant=null,n=0;
  try{
   ant=await gsPrep();
-  const achados=[];let falhas=0;
-  for(let id=0;id<=0xFF;id++){
-   const {resp,ack}=await gsPede([0x21,id],180);
+  let falhas=0;
+  for(let id=0;id<=0xFF&&!gsStop;id++){
+   // early: para de escutar assim que vier 61 xx (positiva) ou 7F 21 (negativa) deste id
+   const {resp,ack}=await gsPede([0x21,id],160,b=>(b[0]===0x61&&b[1]===id)||(b[0]===0x7F&&b[1]===0x21));
    if(ack==='falhou')falhas++;else falhas=0;
-   if(falhas>=6){res.innerHTML='<p class="warn">Parou: 6 envios seguidos sem ACK — confira ligação e velocidade.</p>';break}
+   if(falhas>=6){$('#gsMp').innerHTML='<span class="warn">parou: 6 sem ACK — confira ligação/velocidade</span>';break}
    const pos=resp.find(h=>{const d=h.split(' ').map(x=>parseInt(x,16));return d[1]===0x61&&d[2]===id});
-   if(pos){const d=pos.split(' ').map(x=>parseInt(x,16));const v=d.slice(3).filter((_,i)=>true);
+   if(pos){const d=pos.split(' ').map(x=>parseInt(x,16));const v=d.slice(3);
     const a=v.filter(c=>c>=32&&c<127).map(c=>String.fromCharCode(c)).join('');
-    achados.push({id,hex:v.map(c=>hx(c,2)).join(' '),asc:a.length>=3?a:''})}
-   st.textContent='mapeando 21 '+hx(id,2)+'… ('+achados.length+' achados)';
+    if(!n)tb.innerHTML='';n++;
+    const tr=document.createElement('tr');tr.innerHTML='<td><code>21 '+hx(id,2)+'</code></td><td><code>'+v.map(c=>hx(c,2)).join(' ')+'</code></td><td>'+(a.length>=3?a:'<span class="mu">—</span>')+'</td>';tb.appendChild(tr)}
+   $('#gsBarF').style.width=((id+1)/256*100).toFixed(0)+'%';$('#gsMp').textContent='21 '+hx(id,2)+' · '+n+' achado(s)';st.textContent=n+' achado(s)…';
   }
-  if(achados.length){st.className='bdg ok';st.textContent='✔ '+achados.length+' identificadores';
-   res.innerHTML='<table class="ecu-tbl"><thead><tr><th>Local ID</th><th>Dados</th><th>Texto</th></tr></thead><tbody>'+achados.map(x=>'<tr><td><code>21 '+hx(x.id,2)+'</code></td><td><code>'+x.hex+'</code></td><td>'+(x.asc||'<span class="mu">—</span>')+'</td></tr>').join('')+'</tbody></table>'}
-  else{st.className='bdg er';st.textContent='nada';res.innerHTML='<p class="mu">Nenhum identificador 21 xx respondeu.</p>'}
- }catch(e){st.textContent='erro';res.textContent='Erro: '+e}
+  st.className='bdg '+(n?'ok':(gsStop?'':'er'));st.textContent=gsStop?('parado · '+n+' achado(s)'):(n?'✔ '+n+' identificadores':'nada');
+  if(!n&&!gsStop)tb.innerHTML='<tr><td colspan="3" class="mu">Nenhum identificador 21 xx respondeu.</td></tr>';
+ }catch(e){st.textContent='erro';$('#gsMp').textContent='Erro: '+e}
  finally{await gsRest(ant);gsBusy=false}
 }
 document.addEventListener('click',e=>{const b=e.target.closest('[data-gskwp]');if(b)gsKwp(b.dataset.gskwp)});
 $('#gsMap21').onclick=gsScan21;
+$('#gsMapPara').onclick=()=>{gsStop=true;$('#gsSt').textContent='parando…'};
 $('#gsLivreB').onclick=()=>{const v=$('#gsLivre').value.trim();if(/^([0-9a-f]{1,2}\s*)+$/i.test(v))gsKwp(v);else msg('Pedido livre do GS: bytes hex do serviço, ex. 21 01')};
 $('#fcTeste').onclick=fcTeste;
 document.addEventListener('click',e=>{const b=e.target.closest('[data-fcdg]');if(b)fcDiag(b.dataset.fcdg)});
