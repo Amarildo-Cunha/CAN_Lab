@@ -155,7 +155,7 @@ table{font-size:13px}
 #serLog{max-height:30vh}.noack b{color:var(--c1)}.noack span{flex:1;line-height:1.5}
 footer{margin:28px 28px 0}
 </style></head><body><div class="wrapx">
-<header><div class="brand">PETTERSON <b>TOOLS</b></div><div class="hrow"><h1>CAN Lab <small>v2.17 · USB</small></h1><button id="bUsb" class="pri">Conectar USB</button><span id="con" class="bdg">desconectado</span><span class="mu" id="info"></span></div></header>
+<header><div class="brand">PETTERSON <b>TOOLS</b></div><div class="hrow"><h1>CAN Lab <small>v2.18 · USB</small></h1><button id="bUsb" class="pri">Conectar USB</button><span id="con" class="bdg">desconectado</span><span class="mu" id="info"></span></div></header>
 <div id="msg">Carregando configuração…</div>
 <div class="semusb" id="semusb"><b>Ligue o ESP32 no cabo USB e clique em "Conectar USB".</b><br>
 Escolha a porta COM do ESP32 (CP210x ou CH340). Feche o Monitor Serial do Arduino IDE antes: só um programa pode usar a porta.<br>
@@ -524,17 +524,17 @@ Escolha a porta COM do ESP32 (CP210x ou CH340). Feche o Monitor Serial do Arduin
 <tr><td>Válvula do freio do contraeixo</td><td>Sincroniza a rotação na troca</td><td class="warn">⚠</td></tr>
 <tr><td>Sensores de posição e rotação</td><td>Informam gate, marcha, split, range e rotações da caixa</td><td class="warn">⚠</td></tr>
 </tbody></table></div>
-<p class="mu" style="margin:12px 0 4px"><b>5) Axor 958.4 — módulo EPS (A16), esquema PE26.20-W-2001E (12/2010)</b> — nesta versão <span class="warn">não há válvulas de embreagem (MKU)</span>: só o sensor de curso B2 (embreagem por pedal).</p>
-<div class="wrap" style="max-height:none"><table class="ecu-tbl"><thead><tr><th>Bloco</th><th>Função</th><th>Sinais (A16 X3)</th></tr></thead><tbody>
-<tr><td>Y33</td><td>Seleção / gate</td><td>MG1 12/01 · MG2 12/02</td></tr>
-<tr><td>Y35</td><td>Cilindro de marcha — enche</td><td>MUB 12/11 (ímpares) · MGB 12/08 (pares)</td></tr>
-<tr><td>Y37</td><td>Cilindro de marcha — esvazia</td><td>MUE 12/12 (ímpares) · MGE 12/09 (pares)</td></tr>
-<tr><td>Y29</td><td>Split</td><td>MS1 12/4 · MS2 12/5</td></tr>
-<tr><td>Y31 · Y31/1 · Y32</td><td>Range</td><td>MR1 12/07 · MR2 12/10</td></tr>
-<tr><td>—</td><td>Massa comum das válvulas</td><td>MV GND 12/3 (2,5 mm² → X29 31/10 → XG/MV)</td></tr>
-<tr><td>Sensores (X4)</td><td>B3 rotação 15/08-09 · B60 marcha 15/14 · B61 gate 15/15 · B62 split 15/13 · B63 range 15/10 · B2 embreagem 15/11 · massa 15/12</td><td>X1: 9/9 KL31 · 9/1 CAN-H · 9/3 CAN-L · 9/7 KL30 · 9/8 KL15</td></tr>
+<p class="mu" style="margin:12px 0 4px"><b>5) A93 — válvulas da embreagem automática no GS II (X1 15 + X2 46 pinos)</b> — esquema PE26.20-W-2001-99A. Só existe com <b>EAS</b> (U209, embreagem automática); caminhão com pedal não tem A93.</p>
+<div class="wrap" style="max-height:none"><table class="ecu-tbl"><thead><tr><th>Pino GS X2</th><th>Sinal</th><th>Pino A93</th><th>Válvula</th></tr></thead><tbody>
+<tr><td>46/4</td><td><b>MKUB1</b></td><td>6</td><td>Y39.1 — enche embreagem (fino)</td></tr>
+<tr><td>46/2</td><td><b>MKUE1</b></td><td>5</td><td>Y39.3 — esvazia embreagem (fino)</td></tr>
+<tr><td>46/7</td><td>31 — massa comum par 1</td><td>2</td><td>retorno Y39.1 + Y39.3</td></tr>
+<tr><td>46/5</td><td><b>MKUB2</b></td><td>4</td><td>Y39.2 — enche embreagem (grosso)</td></tr>
+<tr><td>46/3</td><td><b>MKUE2</b></td><td>3</td><td>Y39.4 — esvazia embreagem (grosso)</td></tr>
+<tr><td><b>46/12</b></td><td>31 — massa comum par 2</td><td>7</td><td>retorno Y39.2 + Y39.4 · <span class="warn">falha 13904 (3904)</span></td></tr>
+<tr><td>46/34 · 46/30</td><td>SKU · 31</td><td>—</td><td>sensor de curso da embreagem B2</td></tr>
 </tbody></table></div>
-<p class="mu" style="margin-top:6px">Lista de falhas GS: <b>3904</b> massa comum MKUE2/MKUB2 em curto para massa · <b>8093</b> tipo de transmissão errado · <b>8185</b> plausibilidade "regulagem do mancal da embreagem" · <b>1012</b> GS II parametrizado errado. Num Axor com pedal, MKU não existe: essas falhas indicam GS parametrizado como embreagem automática. No Actros (GS II), o bloco U145 (Y37/Y38 = MUE/MGE) só existe em caixa sincronizada, não em caixa constant-mesh.</p>
+<p class="mu" style="margin-top:6px">Lista de falhas GS: <b>3904</b> massa comum MKUE2/MKUB2 (pino 46/12) em curto para massa · 3903 aberta · 3905 curto ao + · <b>8093</b> tipo de transmissão errado · <b>8185</b> plausibilidade "regulagem do mancal da embreagem" · <b>1012</b> GS II parametrizado errado. Teste com EAS: GS desligado e X2 solto, 46/12 contra o chassi deve dar <b>aberto</b>; bobinas 46/5↔46/12 e 46/3↔46/12 iguais entre si. Sem EAS (pedal): falha = GS parametrizado errado. Outros pinos X2: MR1 46/46 · MR2 46/17 · SRA 46/29 · MS1 46/14 · MS2 46/13 · SSP 46/19.</p>
 <p class="mu" style="margin-top:8px">Para ligar cada nome à sua posição Y: DAS › GS › <b>Ativações</b>, acionar uma válvula por vez e ver qual dá o clique. Falhas após EEPROM zerada (Axor 958.433): 28185 plausibilidade da posição da embreagem, 28093 tipo errado de caixa, 13904 massa comum MKUE2/MKUB2 — vêm da codificação perdida; refazer SCN e aprendizado da embreagem antes de mexer no chicote.</p>
 </div>
 </section>
@@ -661,7 +661,7 @@ Escolha a porta COM do ESP32 (CP210x ou CH340). Feche o Monitor Serial do Arduin
 </div>
 <div class="sys-box">
 <h3>Informações</h3>
-<div class="mu">Petterson Tools · PT CAN Lab v2.17 (PT-CAN-01) — ECU › Mercedes › GS (diagnóstico KWP 4F5/4F4 · tabela de válvulas) · ECU › Volvo › FCIOM (teste de comunicação) · aviso de ACK na transmissão · ECU › Mercedes › Painel Sprinter (CAN 500 kbps), ECU › Cummins, parâmetros J1939</div>
+<div class="mu">Petterson Tools · PT CAN Lab v2.18 (PT-CAN-01) — ECU › Mercedes › GS (diagnóstico KWP 4F5/4F4 · tabela de válvulas) · ECU › Volvo › FCIOM (teste de comunicação) · aviso de ACK na transmissão · ECU › Mercedes › Painel Sprinter (CAN 500 kbps), ECU › Cummins, parâmetros J1939</div>
 <div class="mu">ESP32 + MCP2515 + TJA1050 · J1939 250 kbps</div>
 <div class="mu" id="sysHeap"></div>
 </div>
