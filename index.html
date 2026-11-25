@@ -155,7 +155,7 @@ table{font-size:13px}
 #serLog{max-height:30vh}.noack b{color:var(--c1)}.noack span{flex:1;line-height:1.5}
 footer{margin:28px 28px 0}
 </style></head><body><div class="wrapx">
-<header><div class="brand">PETTERSON <b>TOOLS</b></div><div class="hrow"><h1>CAN Lab <small>v2.18 · USB</small></h1><button id="bUsb" class="pri">Conectar USB</button><span id="con" class="bdg">desconectado</span><span class="mu" id="info"></span></div></header>
+<header><div class="brand">PETTERSON <b>TOOLS</b></div><div class="hrow"><h1>CAN Lab <small>v2.19 · USB</small></h1><button id="bUsb" class="pri">Conectar USB</button><span id="con" class="bdg">desconectado</span><span class="mu" id="info"></span></div></header>
 <div id="msg">Carregando configuração…</div>
 <div class="semusb" id="semusb"><b>Ligue o ESP32 no cabo USB e clique em "Conectar USB".</b><br>
 Escolha a porta COM do ESP32 (CP210x ou CH340). Feche o Monitor Serial do Arduino IDE antes: só um programa pode usar a porta.<br>
@@ -486,15 +486,15 @@ Escolha a porta COM do ESP32 (CP210x ou CH340). Feche o Monitor Serial do Arduin
 <!-- v2.14/v2.15: tabela de consulta — válvulas do conjunto GS -->
 <div class="sys-box" style="margin-top:14px">
 <h3>Válvulas do conjunto GS — consulta</h3>
-<p class="mu">O GS vem parafusado sobre o <b>atuador de embreagem</b>: as válvulas MKU ficam presas a ele. As válvulas de troca de marcha ficam no <b>atuador de marchas</b>, na caixa. Fonte das funções MKU: manual de treinamento Mercedes "Telligent automatic transmission in ACTROS and ATEGO" (10/03). Esquemas oficiais: WIS GF 26.20-W-0007MP. <span class="warn">⚠ = a confirmar</span>.</p>
-<p class="mu" style="margin:8px 0 4px"><b>1) Presas ao GS — atuador de embreagem</b></p>
-<div class="wrap" style="max-height:none"><table class="ecu-tbl"><thead><tr><th>Nome (DAS)</th><th>Função</th><th>Tipo</th><th>Posição na figura</th><th>Observação</th></tr></thead><tbody>
-<tr><td><b>MKUB1</b></td><td>Enche o cilindro da embreagem com restrição</td><td>ajuste fino</td><td class="warn">Y29/Y30/Y33/Y34 ⚠</td><td>provável: encher = desacopla ⚠</td></tr>
-<tr><td><b>MKUB2</b></td><td>Enche o cilindro da embreagem</td><td>ajuste grosso / rápido</td><td class="warn">Y29/Y30/Y33/Y34 ⚠</td><td>massa comum com MKUE2 (falha 13904)</td></tr>
-<tr><td><b>MKUE1</b></td><td>Esvazia o cilindro da embreagem com restrição</td><td>ajuste fino</td><td class="warn">Y29/Y30/Y33/Y34 ⚠</td><td>provável: esvaziar = acopla ⚠</td></tr>
-<tr><td><b>MKUE2</b></td><td>Esvazia o cilindro da embreagem</td><td>ajuste grosso / rápido</td><td class="warn">Y29/Y30/Y33/Y34 ⚠</td><td>massa comum com MKUB2 (falha 13904)</td></tr>
-<tr><td>5ª válvula</td><td class="warn">desconhecida ⚠</td><td>—</td><td>sem rótulo (em cima)</td><td>identificar pelas Ativações do DAS</td></tr>
-<tr><td>B61 (B2 no manual)</td><td>Sensor de curso do pistão da embreagem</td><td>sensor</td><td>B61</td><td>valor real "posição da embreagem" no DAS</td></tr>
+<p class="mu">GS II = conectores X1 (15) + X2 (46). Preso ao GS fica o <b>A90 (seleção e engate)</b>; os módulos A92 (marcha), A91 (range) e A93 (embreagem automática) ficam fora e ligam pelo X2. B = enche, E = esvazia; U = ímpares, G = pares. Fontes: esquema PE26.20-W-2001-99A e GF26.20-W-0001MP (Actros 930–934). <span class="warn">⚠ = a confirmar</span>.</p>
+<p class="mu" style="margin:8px 0 4px"><b>1) Preso ao GS — A90, módulo de seleção e engate</b></p>
+<div class="wrap" style="max-height:none"><table class="ecu-tbl"><thead><tr><th>Ref.</th><th>Sinal</th><th>Função</th></tr></thead><tbody>
+<tr><td>Y33</td><td>MG1</td><td>Seleção / gate 1</td></tr>
+<tr><td>Y34</td><td>MG2</td><td>Seleção / gate 2</td></tr>
+<tr><td>Y29</td><td>MS1</td><td>Split 1 (U144)</td></tr>
+<tr><td>Y30</td><td>MS2</td><td>Split 2 (U144)</td></tr>
+<tr><td>Y125</td><td>—</td><td>Só caixa constant-mesh (U166) — provável 5ª válvula sem rótulo <span class="warn">⚠</span></td></tr>
+<tr><td>B61</td><td>SGE</td><td>Sensor de seleção e engate</td></tr>
 </tbody></table></div>
 <p class="mu" style="margin:12px 0 4px"><b>2) Fora do GS — A92 = cilindro de marchas (engata marchas ímpares × pares), conector X2 do GS (46 pinos)</b> — esquema DAS W26.20-1204-14 (Actros 934, 2019). Fios 1 mm² cinza. B = enche, E = esvazia; U = marchas ímpares, G = marchas pares (lista de abreviaturas Mercedes: MGB/MGE = cilindro das marchas pares).</p>
 <div class="wrap" style="max-height:none"><table class="ecu-tbl"><thead><tr><th>Pino GS X2</th><th>Sinal</th><th>Pino A92</th><th>Componente</th><th>Observação</th></tr></thead><tbody>
@@ -661,7 +661,7 @@ Escolha a porta COM do ESP32 (CP210x ou CH340). Feche o Monitor Serial do Arduin
 </div>
 <div class="sys-box">
 <h3>Informações</h3>
-<div class="mu">Petterson Tools · PT CAN Lab v2.18 (PT-CAN-01) — ECU › Mercedes › GS (diagnóstico KWP 4F5/4F4 · tabela de válvulas) · ECU › Volvo › FCIOM (teste de comunicação) · aviso de ACK na transmissão · ECU › Mercedes › Painel Sprinter (CAN 500 kbps), ECU › Cummins, parâmetros J1939</div>
+<div class="mu">Petterson Tools · PT CAN Lab v2.19 (PT-CAN-01) — ECU › Mercedes › GS (diagnóstico KWP 4F5/4F4 · tabela de válvulas) · ECU › Volvo › FCIOM (teste de comunicação) · aviso de ACK na transmissão · ECU › Mercedes › Painel Sprinter (CAN 500 kbps), ECU › Cummins, parâmetros J1939</div>
 <div class="mu">ESP32 + MCP2515 + TJA1050 · J1939 250 kbps</div>
 <div class="mu" id="sysHeap"></div>
 </div>
