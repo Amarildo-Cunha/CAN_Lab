@@ -155,7 +155,7 @@ table{font-size:13px}
 #serLog{max-height:30vh}.noack b{color:var(--c1)}.noack span{flex:1;line-height:1.5}
 footer{margin:28px 28px 0}
 </style></head><body><div class="wrapx">
-<header><div class="brand">PETTERSON <b>TOOLS</b></div><div class="hrow"><h1>CAN Lab <small>v2.15 · USB</small></h1><button id="bUsb" class="pri">Conectar USB</button><span id="con" class="bdg">desconectado</span><span class="mu" id="info"></span></div></header>
+<header><div class="brand">PETTERSON <b>TOOLS</b></div><div class="hrow"><h1>CAN Lab <small>v2.16 · USB</small></h1><button id="bUsb" class="pri">Conectar USB</button><span id="con" class="bdg">desconectado</span><span class="mu" id="info"></span></div></header>
 <div id="msg">Carregando configuração…</div>
 <div class="semusb" id="semusb"><b>Ligue o ESP32 no cabo USB e clique em "Conectar USB".</b><br>
 Escolha a porta COM do ESP32 (CP210x ou CH340). Feche o Monitor Serial do Arduino IDE antes: só um programa pode usar a porta.<br>
@@ -496,14 +496,14 @@ Escolha a porta COM do ESP32 (CP210x ou CH340). Feche o Monitor Serial do Arduin
 <tr><td>5ª válvula</td><td class="warn">desconhecida ⚠</td><td>—</td><td>sem rótulo (em cima)</td><td>identificar pelas Ativações do DAS</td></tr>
 <tr><td>B61 (B2 no manual)</td><td>Sensor de curso do pistão da embreagem</td><td>sensor</td><td>B61</td><td>valor real "posição da embreagem" no DAS</td></tr>
 </tbody></table></div>
-<p class="mu" style="margin:12px 0 4px"><b>2) Fora do GS — atuador A92 no conector X2 do GS (46 pinos)</b> — esquema DAS W26.20-1204-14 (Actros 934, 2019). Fios 1 mm² cinza. B = enche, E = esvazia.</p>
+<p class="mu" style="margin:12px 0 4px"><b>2) Fora do GS — A92 = cilindro de marchas (engata marchas ímpares × pares), conector X2 do GS (46 pinos)</b> — esquema DAS W26.20-1204-14 (Actros 934, 2019). Fios 1 mm² cinza. B = enche, E = esvazia; U = marchas ímpares, G = marchas pares (lista de abreviaturas Mercedes: MGB/MGE = cilindro das marchas pares).</p>
 <div class="wrap" style="max-height:none"><table class="ecu-tbl"><thead><tr><th>Pino GS X2</th><th>Sinal</th><th>Pino A92</th><th>Componente</th><th>Observação</th></tr></thead><tbody>
-<tr><td>46/42</td><td><b>MUG / MUB</b></td><td>2</td><td>Y35 válvula</td><td>par U — enche</td></tr>
-<tr><td>46/37</td><td><b>MGG / MGB</b></td><td>3</td><td>Y36 válvula</td><td>par G — enche · <span class="warn">ligado no V71, ausente no V72</span></td></tr>
-<tr><td>46/44</td><td><b>MUE</b></td><td>7</td><td>Y37 válvula (U145)</td><td>par U — esvazia · <span class="warn">ligado no V71, ausente no V72</span></td></tr>
-<tr><td>46/36</td><td><b>MGE</b></td><td>6</td><td>Y38 válvula (U145)</td><td>par G — esvazia</td></tr>
+<tr><td>46/42</td><td><b>MUG / MUB</b></td><td>2</td><td>Y35 válvula</td><td>ímpares — enche</td></tr>
+<tr><td>46/37</td><td><b>MGG / MGB</b></td><td>3</td><td>Y36 válvula</td><td>pares — enche · <span class="warn">ligado no V71, ausente no V72</span></td></tr>
+<tr><td>46/44</td><td><b>MUE</b></td><td>7</td><td>Y37 válvula (U145)</td><td>ímpares — esvazia · <span class="warn">ligado no V71, ausente no V72</span></td></tr>
+<tr><td>46/36</td><td><b>MGE</b></td><td>6</td><td>Y38 válvula (U145)</td><td>pares — esvazia</td></tr>
 <tr><td>46/35</td><td>31</td><td>1</td><td>massa comum Y35–Y38</td><td>retorno das 4 válvulas</td></tr>
-<tr><td>46/27</td><td>SGG</td><td>5</td><td>B60 sensor</td><td>sinal</td></tr>
+<tr><td>46/27</td><td>SGG</td><td>5</td><td>B60 sensor</td><td>sinal — provável sensor de posição do cilindro de marchas</td></tr>
 <tr><td>46/30</td><td>31</td><td>4</td><td>B60 sensor</td><td>massa do sensor</td></tr>
 </tbody></table></div>
 <p class="mu" style="margin:12px 0 4px"><b>3) Conector X1 do GS (15 pinos) — alimentação e CAN</b> — esquema Actros 932314, pág. 29.</p>
@@ -650,7 +650,7 @@ Escolha a porta COM do ESP32 (CP210x ou CH340). Feche o Monitor Serial do Arduin
 </div>
 <div class="sys-box">
 <h3>Informações</h3>
-<div class="mu">Petterson Tools · PT CAN Lab v2.15 (PT-CAN-01) — ECU › Mercedes › GS (diagnóstico KWP 4F5/4F4 · tabela de válvulas) · ECU › Volvo › FCIOM (teste de comunicação) · aviso de ACK na transmissão · ECU › Mercedes › Painel Sprinter (CAN 500 kbps), ECU › Cummins, parâmetros J1939</div>
+<div class="mu">Petterson Tools · PT CAN Lab v2.16 (PT-CAN-01) — ECU › Mercedes › GS (diagnóstico KWP 4F5/4F4 · tabela de válvulas) · ECU › Volvo › FCIOM (teste de comunicação) · aviso de ACK na transmissão · ECU › Mercedes › Painel Sprinter (CAN 500 kbps), ECU › Cummins, parâmetros J1939</div>
 <div class="mu">ESP32 + MCP2515 + TJA1050 · J1939 250 kbps</div>
 <div class="mu" id="sysHeap"></div>
 </div>
