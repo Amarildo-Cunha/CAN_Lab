@@ -155,7 +155,7 @@ table{font-size:13px}
 #serLog{max-height:30vh}.noack b{color:var(--c1)}.noack span{flex:1;line-height:1.5}
 footer{margin:28px 28px 0}
 </style></head><body><div class="wrapx">
-<header><div class="brand">PETTERSON <b>TOOLS</b></div><div class="hrow"><h1>CAN Lab <small>v2.21 · USB</small></h1><button id="bUsb" class="pri">Conectar USB</button><span id="con" class="bdg">desconectado</span><span class="mu" id="info"></span></div></header>
+<header><div class="brand">PETTERSON <b>TOOLS</b></div><div class="hrow"><h1>CAN Lab <small>v2.22 · USB</small></h1><button id="bUsb" class="pri">Conectar USB</button><span id="con" class="bdg">desconectado</span><span class="mu" id="info"></span></div></header>
 <div id="msg">Carregando configuração…</div>
 <div class="semusb" id="semusb"><b>Ligue o ESP32 no cabo USB e clique em "Conectar USB".</b><br>
 Escolha a porta COM do ESP32 (CP210x ou CH340). Feche o Monitor Serial do Arduino IDE antes: só um programa pode usar a porta.<br>
@@ -454,7 +454,7 @@ Escolha a porta COM do ESP32 (CP210x ou CH340). Feche o Monitor Serial do Arduin
 <div class="wrap" style="max-height:none"><table class="ecu-tbl"><thead><tr><th>Origem</th><th>Código Iveco / SPN</th><th>FMI</th><th>OC</th><th>Bytes</th></tr></thead><tbody id="ivDtc"><tr><td colspan="5" class="mu">Use "Ler falhas ativas DM1" ou "Ler falhas DM2" acima.</td></tr></tbody></table></div>
 </div>
 <div class="sc" style="margin-top:14px">
-<div class="sh"><span class="dot" id="obDot" style="background:var(--mu)"></span>OBD-II pela CAN (ISO 15765-4) — v2.21</div>
+<div class="sh"><span class="dot" id="obDot" style="background:var(--mu)"></span>OBD-II pela CAN (ISO 15765-4) — v2.22</div>
 <p class="mu">Diagnóstico OBD-II padrão (o mesmo que o Ancel achou: "ISO 15765-4 (CAN)", ECU &amp;00). Serve para qualquer caminhão ou carro com OBD pela CAN. Primeiro a página <b>escuta</b> a rede para descobrir a velocidade (250 ou 500 kbps) sem transmitir na velocidade errada; depois pergunta em 29 bits (<code>18DB33F1</code> → <code>18DAF1xx</code>) e em 11 bits (<code>7DF</code> → <code>7E8…</code>). Só leitura. <b>Gabarito desta ECU:</b> VIN 93ZS2STH0B8812604.</p>
 <div class="row" style="margin:10px 0;gap:10px;flex-wrap:wrap">
 <button class="pri" id="obLer">Ler OBD-II (VIN, calibração, estado, falhas)</button>
@@ -673,7 +673,7 @@ Escolha a porta COM do ESP32 (CP210x ou CH340). Feche o Monitor Serial do Arduin
 </div>
 <div class="sys-box">
 <h3>Informações</h3>
-<div class="mu">Petterson Tools · PT CAN Lab v2.21 (PT-CAN-01) — ECU › Iveco › EDC7 (OBD-II ISO 15765-4 · DM1 com nome Iveco) · ECU › Mercedes › GS (diagnóstico KWP 4F5/4F4 · tabela de válvulas) · ECU › Volvo › FCIOM (teste de comunicação) · aviso de ACK na transmissão · ECU › Mercedes › Painel Sprinter (CAN 500 kbps), ECU › Cummins, parâmetros J1939</div>
+<div class="mu">Petterson Tools · PT CAN Lab v2.22 (PT-CAN-01) — ECU › Iveco › EDC7 (OBD-II ISO 15765-4 · DM1 com nome Iveco) · ECU › Mercedes › GS (diagnóstico KWP 4F5/4F4 · tabela de válvulas) · ECU › Volvo › FCIOM (teste de comunicação) · aviso de ACK na transmissão · ECU › Mercedes › Painel Sprinter (CAN 500 kbps), ECU › Cummins, parâmetros J1939</div>
 <div class="mu">ESP32 + MCP2515 + TJA1050 · J1939 250 kbps</div>
 <div class="mu" id="sysHeap"></div>
 </div>
@@ -2101,7 +2101,7 @@ async function obPede(cfg,req,espera){
  let rajada=OB_LONGOS.includes(req)?15:0,cf=false,nfc=0;
  while(Date.now()-t0<lim&&!fim){
   if(rajada>0&&!cf){rajada--;nfc++;await fcCmd('w '+fcCego+' 30 00 00 00 00 00 00 00')}
-  const j=await framesDesde(s);s=j.h;
+  let j;try{j=await framesDesde(s)}catch(e){await fcSleep(30);continue}s=j.h;
   for(const f of j.f){const[t,id,fl,len,dh]=f;const ext=fl&1;
    let src=null;if(cfg.x&&ext&&(id>>>8)===0x18DAF1)src=id&255;if(!cfg.x&&!ext&&id>=0x7E8&&id<=0x7EF)src=id;
    if(src===null)continue;const d=parseHex(dh);raw.push(idStr(id,ext)+' '+(dh.match(/../g)||[]).join(' '));
@@ -2113,6 +2113,13 @@ async function obPede(cfg,req,espera){
   if(!fim&&!(rajada>0&&!cf))await fcSleep(10)}
  if(!fim&&Object.values(rx).some(m=>m.tot))raw.push('<span class="warn">chegou só o 1º frame: a ECU não aceitou o flow control a tempo ('+nfc+' FC enviados)</span>');
  return {res:fim,raw,ack:fcAck(tx)}}
+// v2.22: pedido pelo ISO-TP do próprio firmware (/api/kwp, testador F9 -> ECU 00 em 18DA00F9/18DAF900).
+// O ESP32 manda o flow control na hora (a página pela Serial é lenta demais para o EDC7).
+async function obKwp(req){const q=req.replace(/ /g,'');let j=null;
+ try{await kwpJ('/api/kwp/open');j=await kwpJ('/api/kwp?req='+q+'&t=2000')}catch(e){}
+ try{await kwpJ('/api/kwp/close')}catch(e){}
+ if(j&&j.ok&&j.h)return{res:{src:0,d:parseHex(j.h)},raw:['firmware ISO-TP (18DA00F9 → 18DAF900): '+(j.h.match(/../g)||[]).join(' ')+' ['+j.ms+' ms]'],ack:'ack'};
+ return{res:null,raw:['firmware ISO-TP: '+(j?(j.err||'sem resposta')+(j.h?' '+j.h:''):'rota /api/kwp não respondeu')],ack:'?'}}
 async function obLer(){
  if(!USB.on){msg('Conecte o USB primeiro');return}
  const btn=$('#obLer');btn.disabled=true;const st=$('#obSt'),tb=$('#obRows');$('#obDot').style.background='var(--wa)';
@@ -2133,7 +2140,13 @@ async function obLer(){
   const lab=cfg.v+' kbps · '+(cfg.x?'29 bits':'11 bits')+' · ECU '+(cfg.x?'&amp;'+hx(pr.res.src,2):hx(pr.res.src,3));
   lin.push(row('—','Protocolo','<b>ISO 15765-4 (CAN) · '+lab+'</b>',info));tb.innerHTML=lin.join('');
   for(const[req,nome,fmt]of OB_SVC){st.textContent='Lendo '+nome+'…';
-   const r=req==='01 00'?pr:await obPede(cfg,req,2000);let v='<span class="mu">sem resposta</span>';
+   let r;try{
+    if(req==='01 00')r=pr;
+    else if(OB_LONGOS.includes(req)&&cfg.x&&cfg.ecu===0){r=await obKwp(req);
+     if(!r.res){await fcCmd('v '+cfg.v);await fcCmd('m normal');const r2=await obPede(cfg,req,2000);r2.raw=r.raw.concat(r2.raw);r=r2}}
+    else r=await obPede(cfg,req,2000);
+   }catch(e){r={res:null,raw:['erro: '+e]}}
+   let v='<span class="mu">sem resposta</span>';
    if(r.res){const d=r.res.d;if(d[0]===0x7F)v='<span class="mu">não suportado (NRC '+hx(d[2],2)+')</span>';else{try{v=fmt(d)}catch(e){v='?'}}}
    lin.push(row(req,nome,v,r.raw.slice(0,6).join('<br>')+(r.raw.length>6?'<br>…<br>'+r.raw[r.raw.length-1]:'')));tb.innerHTML=lin.join('')}
   $('#obDot').style.background='var(--ok)';st.textContent='Concluído '+new Date().toLocaleTimeString('pt-BR');
