@@ -158,7 +158,7 @@ table{font-size:13px}
 #serLog{max-height:30vh}.noack b{color:var(--c1)}.noack span{flex:1;line-height:1.5}
 footer{margin:28px 28px 0}
 </style></head><body><div class="wrapx">
-<header><div class="brand">PETTERSON <b>TOOLS</b></div><div class="hrow"><h1>CAN Lab <small>v2.24 · USB</small></h1><button id="bUsb" class="pri">Conectar USB</button><span id="con" class="bdg">desconectado</span><span class="mu" id="info"></span></div></header>
+<header><div class="brand">PETTERSON <b>TOOLS</b></div><div class="hrow"><h1>CAN Lab <small>v2.25 · USB</small></h1><button id="bUsb" class="pri">Conectar USB</button><span id="con" class="bdg">desconectado</span><span class="mu" id="info"></span></div></header>
 <div id="msg">Carregando configuração…</div>
 <div class="semusb" id="semusb"><b>Ligue o ESP32 no cabo USB e clique em "Conectar USB".</b><br>
 Escolha a porta COM do ESP32 (CP210x ou CH340). Feche o Monitor Serial do Arduino IDE antes: só um programa pode usar a porta.<br>
@@ -176,7 +176,7 @@ Escolha a porta COM do ESP32 (CP210x ou CH340). Feche o Monitor Serial do Arduin
 </nav>
 
 <section class="pg on" id="dash">
-<div class="dbar" id="dbar" style="display:none"><span id="dInfo"></span><button id="dTodos" class="sm">Mostrar todos</button></div>
+<div class="dbar" id="dbar" style="display:none"><span id="dInfo"></span><span><label class="mu" style="margin-right:12px"><input type="checkbox" id="dObd"> completar com OBD-II</label><button id="dTodos">Mostrar todos</button></span></div>
 <div class="dash" id="gauges"></div>
 <div class="dfalta mu" id="dFalta"></div>
 <div class="dwait" id="dwait">Aguardando dados J1939…</div>
@@ -678,7 +678,7 @@ Escolha a porta COM do ESP32 (CP210x ou CH340). Feche o Monitor Serial do Arduin
 </div>
 <div class="sys-box">
 <h3>Informações</h3>
-<div class="mu">Petterson Tools · PT CAN Lab v2.24 (PT-CAN-01) — Dashboard por ECU (esconde o que a ECU não informa) · ECU › Iveco › EDC7 (OBD-II ISO 15765-4 · DM1 com nome Iveco) · ECU › Mercedes › GS (diagnóstico KWP 4F5/4F4 · tabela de válvulas) · ECU › Volvo › FCIOM (teste de comunicação) · aviso de ACK na transmissão · ECU › Mercedes › Painel Sprinter (CAN 500 kbps), ECU › Cummins, parâmetros J1939</div>
+<div class="mu">Petterson Tools · PT CAN Lab v2.25 (PT-CAN-01) — Dashboard completa com OBD-II · Dashboard por ECU (esconde o que a ECU não informa) · ECU › Iveco › EDC7 (OBD-II ISO 15765-4 · DM1 com nome Iveco) · ECU › Mercedes › GS (diagnóstico KWP 4F5/4F4 · tabela de válvulas) · ECU › Volvo › FCIOM (teste de comunicação) · aviso de ACK na transmissão · ECU › Mercedes › Painel Sprinter (CAN 500 kbps), ECU › Cummins, parâmetros J1939</div>
 <div class="mu">ESP32 + MCP2515 + TJA1050 · J1939 250 kbps</div>
 <div class="mu" id="sysHeap"></div>
 </div>
@@ -998,6 +998,7 @@ function gExtra(g){
  }
 }
 function updGauges(vals){
+ vals=obdMescla(vals);
  let any=false;
  for(const g of GD){
   const el=$('#v_'+g.id),arc=$('#a_'+g.id);
@@ -1035,6 +1036,8 @@ function updGauges(vals){
  $('#dwait').style.display=any?'none':'block';
  $('#gauges').style.display=any?'grid':'none';
  dashFiltra(vals,any);
+ for(const g of GD){const x=$('#x_'+g.id);if(!x||ehBat(g)||(g.pgn===61443&&g.sb===1))continue;
+  if(OBD.usado[g.id]){x.textContent='via OBD-II'+(OBD.usado[g.id]==='erro'?' (J1939 = ERRO)':'');x.className='gx am'}else if(x.textContent.startsWith('via OBD')){x.textContent='';x.className='gx'}}
 }
 // v2.24: Dashboard por ECU — cada motor manda um conjunto diferente de PGNs (ex.: o EDC7 UC31 Iveco não manda
 // a pressão do rail, PGN FEDB, e manda o FEEF com a pressão de combustível = FF "não disponível").
@@ -2198,12 +2201,44 @@ async function obLer(){
  }catch(e){st.textContent='Erro: '+e;$('#obDot').style.background='var(--er)'}
  finally{await obFloodDesliga();if(ant){await fcCmd('v '+ant.kbps);await fcCmd('m '+(ant.modo==='normal'?'normal':'escuta'))}btn.disabled=false}
 }
-$('#ivDm1').onclick=ivLerDm1;$('#obLer').onclick=obLer;
+$('#ivDm1').onclick=ivLerDm1;
+// v2.25: completar o Dashboard com OBD-II (ISO 15765-4). O EDC7 Iveco manda a temp. da água como ERRO (FE) no
+// J1939, mas responde o PID 05 pelo OBD-II (é de onde o Ancel tira o valor). Quando o J1939 não informa ou vem
+// com ERRO, a página pergunta o PID equivalente (1 por vez, ~1 s) e mostra "via OBD-II" embaixo do mostrador.
+// Só PIDs de 1 frame (sem flow control). Usa o testador F1, endereço funcional.
+const OBD_MAP={tAgua:[0x05,d=>d[0]-40],tAdm:[0x0F,d=>d[0]-40],rpm:[0x0C,d=>(d[0]*256+d[1])/4],veloc:[0x0D,d=>d[0]],
+ carga:[0x04,d=>d[0]*100/255],pRail:[0x23,d=>(d[0]*256+d[1])*10/100],tOleo:[0x5C,d=>d[0]-40],pedal:[0x49,d=>d[0]*100/255]};
+const OBD={on:false,cfg:null,sup:null,v:{},usado:{},i:0,busy:false};
+function obdMescla(vals){OBD.usado={};if(!OBD.on)return vals;const now=Date.now(),out=Object.assign({},vals);
+ for(const id in OBD.v){const o=OBD.v[id];if(now-o.t>5000)continue;const j=vals[id];
+  if(j===undefined||j===null){out[id]=o.v;OBD.usado[id]='falta'}else if(Number.isNaN(j)){out[id]=o.v;OBD.usado[id]='erro'}}
+ return out}
+async function obdPrepara(){   // acha ECU (29/11 bits na velocidade atual) e os PIDs suportados
+ let kb=250;try{kb=(await(await fetch('/api/status')).json()).kbps}catch(e){}
+ for(const x of [true,false]){const cfg={v:kb,x};const r=await obPede(cfg,'01 00',800);
+  if(r.res&&r.res.d[0]===0x41){cfg.ecu=r.res.src;const sup=new Set();let base=0,d=r.res.d;
+   for(;;){const m=(d[2]<<24|d[3]<<16|d[4]<<8|d[5])>>>0;for(let i=0;i<32;i++)if(m&(0x80000000>>>i))sup.add(base+i+1);
+    if(!sup.has(base+0x20)||base>=0x60)break;base+=0x20;const r2=await obPede(cfg,'01 '+hx(base,2),800);if(!(r2.res&&r2.res.d[0]===0x41))break;d=r2.res.d}
+   OBD.cfg=cfg;OBD.sup=sup;return true}}
+ return false}
+async function loopObd(){
+ if(OBD.on&&USB.on&&tab==='dash'&&!OBD.busy&&!fcBusy){OBD.busy=true;
+  try{if(!OBD.cfg){if(!(await obdPrepara())){msg('OBD-II: nenhuma ECU respondeu ao 01 00 nesta velocidade');OBD.on=false;$('#dObd').checked=false}
+    else msg('OBD-II: ECU '+(OBD.cfg.x?'&'+hx(OBD.cfg.ecu,2)+' (29 bits)':hx(OBD.cfg.ecu,3)+' (11 bits)')+' · PIDs: '+[...OBD.sup].map(p=>hx(p,2)).join(' '))}
+   else{const ids=Object.keys(OBD_MAP).filter(id=>OBD.sup.has(OBD_MAP[id][0])&&GD.some(g=>g.id===id));
+    if(ids.length){const id=ids[OBD.i++%ids.length],[pid,f]=OBD_MAP[id];const r=await obPede(OBD.cfg,'01 '+hx(pid,2),600);
+     if(r.res&&r.res.d[0]===0x41&&r.res.d[1]===pid)OBD.v[id]={v:f(r.res.d.slice(2)),t:Date.now()}}}
+  }catch(e){}OBD.busy=false}
+ setTimeout(loopObd,OBD.on?250:1000)}
+try{OBD.on=localStorage.getItem('dashObd')==='1'}catch(e){}
+$('#dObd').checked=OBD.on;
+$('#dObd').onchange=()=>{OBD.on=$('#dObd').checked;OBD.cfg=null;OBD.v={};try{localStorage.setItem('dashObd',OBD.on?'1':'0')}catch(e){}};
+$('#obLer').onclick=obLer;
 $('#ivId').onclick=ivLerId;$('#ivDm2').onclick=ivLerDm2;$('#ivAc').onclick=ivAddrClaim;
 $('#fcTeste').onclick=fcTeste;
 document.addEventListener('click',e=>{const b=e.target.closest('[data-fcdg]');if(b)fcDiag(b.dataset.fcdg)});
 $('#fcLivreB').onclick=()=>{const v=$('#fcLivre').value.trim();if(/^([0-9a-f]{2}\s*)+$/i.test(v))fcDiag(v);else msg('Pedido livre: digite bytes hex, ex. 03 22 F1 87')};
-loopS();loopF();loopI();loopD();loopDtc();loopSim();loopMb();
+loopS();loopF();loopI();loopD();loopDtc();loopSim();loopMb();loopObd();
 $('#bUsb').onclick=async()=>{
  if(USB.on){await usbFecha();msg('USB desconectado');return}
  if(!('serial' in navigator)){alert('Este navegador não tem Web Serial. Use o Chrome ou o Edge do computador.');return}
