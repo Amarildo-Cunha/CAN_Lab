@@ -155,7 +155,7 @@ table{font-size:13px}
 #serLog{max-height:30vh}.noack b{color:var(--c1)}.noack span{flex:1;line-height:1.5}
 footer{margin:28px 28px 0}
 </style></head><body><div class="wrapx">
-<header><div class="brand">PETTERSON <b>TOOLS</b></div><div class="hrow"><h1>CAN Lab <small>v2.20 · USB</small></h1><button id="bUsb" class="pri">Conectar USB</button><span id="con" class="bdg">desconectado</span><span class="mu" id="info"></span></div></header>
+<header><div class="brand">PETTERSON <b>TOOLS</b></div><div class="hrow"><h1>CAN Lab <small>v2.21 · USB</small></h1><button id="bUsb" class="pri">Conectar USB</button><span id="con" class="bdg">desconectado</span><span class="mu" id="info"></span></div></header>
 <div id="msg">Carregando configuração…</div>
 <div class="semusb" id="semusb"><b>Ligue o ESP32 no cabo USB e clique em "Conectar USB".</b><br>
 Escolha a porta COM do ESP32 (CP210x ou CH340). Feche o Monitor Serial do Arduino IDE antes: só um programa pode usar a porta.<br>
@@ -454,7 +454,7 @@ Escolha a porta COM do ESP32 (CP210x ou CH340). Feche o Monitor Serial do Arduin
 <div class="wrap" style="max-height:none"><table class="ecu-tbl"><thead><tr><th>Origem</th><th>Código Iveco / SPN</th><th>FMI</th><th>OC</th><th>Bytes</th></tr></thead><tbody id="ivDtc"><tr><td colspan="5" class="mu">Use "Ler falhas ativas DM1" ou "Ler falhas DM2" acima.</td></tr></tbody></table></div>
 </div>
 <div class="sc" style="margin-top:14px">
-<div class="sh"><span class="dot" id="obDot" style="background:var(--mu)"></span>OBD-II pela CAN (ISO 15765-4) — v2.20</div>
+<div class="sh"><span class="dot" id="obDot" style="background:var(--mu)"></span>OBD-II pela CAN (ISO 15765-4) — v2.21</div>
 <p class="mu">Diagnóstico OBD-II padrão (o mesmo que o Ancel achou: "ISO 15765-4 (CAN)", ECU &amp;00). Serve para qualquer caminhão ou carro com OBD pela CAN. Primeiro a página <b>escuta</b> a rede para descobrir a velocidade (250 ou 500 kbps) sem transmitir na velocidade errada; depois pergunta em 29 bits (<code>18DB33F1</code> → <code>18DAF1xx</code>) e em 11 bits (<code>7DF</code> → <code>7E8…</code>). Só leitura. <b>Gabarito desta ECU:</b> VIN 93ZS2STH0B8812604.</p>
 <div class="row" style="margin:10px 0;gap:10px;flex-wrap:wrap">
 <button class="pri" id="obLer">Ler OBD-II (VIN, calibração, estado, falhas)</button>
@@ -673,7 +673,7 @@ Escolha a porta COM do ESP32 (CP210x ou CH340). Feche o Monitor Serial do Arduin
 </div>
 <div class="sys-box">
 <h3>Informações</h3>
-<div class="mu">Petterson Tools · PT CAN Lab v2.20 (PT-CAN-01) — ECU › Iveco › EDC7 (OBD-II ISO 15765-4 · DM1 com nome Iveco) · ECU › Mercedes › GS (diagnóstico KWP 4F5/4F4 · tabela de válvulas) · ECU › Volvo › FCIOM (teste de comunicação) · aviso de ACK na transmissão · ECU › Mercedes › Painel Sprinter (CAN 500 kbps), ECU › Cummins, parâmetros J1939</div>
+<div class="mu">Petterson Tools · PT CAN Lab v2.21 (PT-CAN-01) — ECU › Iveco › EDC7 (OBD-II ISO 15765-4 · DM1 com nome Iveco) · ECU › Mercedes › GS (diagnóstico KWP 4F5/4F4 · tabela de válvulas) · ECU › Volvo › FCIOM (teste de comunicação) · aviso de ACK na transmissão · ECU › Mercedes › Painel Sprinter (CAN 500 kbps), ECU › Cummins, parâmetros J1939</div>
 <div class="mu">ESP32 + MCP2515 + TJA1050 · J1939 250 kbps</div>
 <div class="mu" id="sysHeap"></div>
 </div>
@@ -2067,7 +2067,7 @@ async function ivLerDm1(){
 // ---- OBD-II ----
 const OB_SVC=[
  ['01 00','PIDs suportados (01–20)',d=>{const m=(d[2]<<24|d[3]<<16|d[4]<<8|d[5])>>>0;const l=[];for(let i=0;i<32;i++)if(m&(0x80000000>>>i))l.push(hx(i+1,2));return l.length?l.join(' '):'nenhum'}],
- ['01 01','Estado (MIL, nº de DTCs)',d=>{const a=d[2],b=d[3];return 'MIL <b>'+(a&0x80?'ACESA':'apagada')+'</b> · '+(a&0x7F)+' DTC(s) de emissões · ignição '+(b&8?'<b>compressão (diesel)</b>':'faísca/não informado')}],
+ ['01 01','Estado (MIL, nº de DTCs)',d=>{const a=d[2],b=d[3];return 'MIL <b>'+(a&0x80?'ACESA':'apagada')+'</b> · '+(a&0x7F)+' DTC(s) de emissões · tipo de ignição: '+(b&8?'<b>compressão (diesel)</b>':'<span class="mu">a ECU não marca diesel (bit 3 = 0) — por isso o Ancel mostra "Fagulha"</span>')}],
  ['09 02','VIN (chassi)',d=>'<b>'+obAscii(d.slice(3))+'</b>'],
  ['09 04','Calibração (CALID)',d=>{const n=d[2],o=[];for(let i=0;i<n;i++)o.push('<b>'+obAscii(d.slice(3+i*16,19+i*16))+'</b>');return o.join(' · ')||'—'}],
  ['09 06','CVN (soma da calibração)',d=>{const n=d[2],o=[];for(let i=0;i<n;i++)o.push(d.slice(3+i*4,7+i*4).map(x=>hx(x,2)).join(''));return o.join(' · ')||'—'}],
@@ -2086,24 +2086,32 @@ async function obVelocidades(){const ok=[];
   if(j.f.length>=3&&!st.eps)ok.push(v)}   // ECU sozinha sem ACK repete o mesmo frame: basta ter frames sem erro
  return ok}
 // manda um pedido OBD e junta a resposta ISO-TP (FF/CF com flow control para a ECU que respondeu)
+// v2.21: o EDC7 desiste se o flow control demora (ISO 15765-4: N_Bs ~75 ms) e a página, pela Serial, não reage
+// a tempo ao First Frame. Nos serviços longos ela manda o FC "às cegas" em rajada logo depois do pedido
+// (FC fora de hora é ignorado pela ECU) até chegar o 1º Consecutive Frame.
+const OB_LONGOS=['09 02','09 04','09 06','09 0A'];
 async function obPede(cfg,req,espera){
  const b=req.split(' ').map(x=>parseInt(x,16));const pl=[b.length].concat(b);while(pl.length<8)pl.push(0);
  const dados=pl.map(v=>hx(v,2)).join(' ');
+ const fcId=src=>cfg.x?'18DA'+hx(src,2)+'F1':hx(src-8,3);
+ const fcCego=cfg.x?'18DA'+hx(cfg.ecu??0,2)+'F1':hx((cfg.ecu??0x7E8)-8,3);
  let s=await cabecaFrames();
  const tx=await fcCmd('w '+(cfg.x?'18DB33F1':'7DF')+' '+dados);
  const t0=Date.now();let lim=espera||1500;const rx={};let fim=null;const raw=[];
+ let rajada=OB_LONGOS.includes(req)?15:0,cf=false,nfc=0;
  while(Date.now()-t0<lim&&!fim){
+  if(rajada>0&&!cf){rajada--;nfc++;await fcCmd('w '+fcCego+' 30 00 00 00 00 00 00 00')}
   const j=await framesDesde(s);s=j.h;
   for(const f of j.f){const[t,id,fl,len,dh]=f;const ext=fl&1;
    let src=null;if(cfg.x&&ext&&(id>>>8)===0x18DAF1)src=id&255;if(!cfg.x&&!ext&&id>=0x7E8&&id<=0x7EF)src=id;
    if(src===null)continue;const d=parseHex(dh);raw.push(idStr(id,ext)+' '+(dh.match(/../g)||[]).join(' '));
    const m=rx[src]||(rx[src]={buf:[],tot:0});const pci=d[0]>>4;
    if(pci===0){const p=d.slice(1,1+(d[0]&15));if(p[0]===0x7F&&p[2]===0x78){lim+=3000;continue}fim={src,d:p}}
-   else if(pci===1){m.tot=((d[0]&15)<<8)|d[1];m.buf=d.slice(2);
-    await fcCmd('w '+(cfg.x?'18DA'+hx(src,2)+'F1':hx(src-8,3))+' 30 00 00 00 00 00 00 00')}
-   else if(pci===2&&m.tot){m.buf=m.buf.concat(d.slice(1));if(m.buf.length>=m.tot)fim={src,d:m.buf.slice(0,m.tot)}}
+   else if(pci===1){m.tot=((d[0]&15)<<8)|d[1];m.buf=d.slice(2);if(!(rajada>0))await fcCmd('w '+fcId(src)+' 30 00 00 00 00 00 00 00')}
+   else if(pci===2&&m.tot){cf=true;m.buf=m.buf.concat(d.slice(1));if(m.buf.length>=m.tot)fim={src,d:m.buf.slice(0,m.tot)}}
    if(fim)break}
-  if(!fim)await fcSleep(50)}
+  if(!fim&&!(rajada>0&&!cf))await fcSleep(10)}
+ if(!fim&&Object.values(rx).some(m=>m.tot))raw.push('<span class="warn">chegou só o 1º frame: a ECU não aceitou o flow control a tempo ('+nfc+' FC enviados)</span>');
  return {res:fim,raw,ack:fcAck(tx)}}
 async function obLer(){
  if(!USB.on){msg('Conecte o USB primeiro');return}
@@ -2119,7 +2127,7 @@ async function obLer(){
   let cfg=null,pr=null;
   for(const v of vs){await fcCmd('v '+v);await fcSleep(150);
    for(const x of [true,false]){st.textContent='Procurando ECU: '+v+' kbps, '+(x?'29':'11')+' bits…';
-    const r=await obPede({v,x},'01 00',1200);if(r.res&&r.res.d[0]===0x41){cfg={v,x};pr=r;break}}
+    const r=await obPede({v,x},'01 00',1200);if(r.res&&r.res.d[0]===0x41){cfg={v,x,ecu:r.res.src};pr=r;break}}
    if(cfg)break}
   if(!cfg){tb.innerHTML=row('—','Nenhuma ECU respondeu ao OBD-II','<span class="warn">sem resposta</span> · '+info,'');$('#obDot').style.background='var(--er)';st.textContent='';return}
   const lab=cfg.v+' kbps · '+(cfg.x?'29 bits':'11 bits')+' · ECU '+(cfg.x?'&amp;'+hx(pr.res.src,2):hx(pr.res.src,3));
@@ -2127,7 +2135,7 @@ async function obLer(){
   for(const[req,nome,fmt]of OB_SVC){st.textContent='Lendo '+nome+'…';
    const r=req==='01 00'?pr:await obPede(cfg,req,2000);let v='<span class="mu">sem resposta</span>';
    if(r.res){const d=r.res.d;if(d[0]===0x7F)v='<span class="mu">não suportado (NRC '+hx(d[2],2)+')</span>';else{try{v=fmt(d)}catch(e){v='?'}}}
-   lin.push(row(req,nome,v,r.raw.slice(0,6).join('<br>')+(r.raw.length>6?'<br>…':'')));tb.innerHTML=lin.join('')}
+   lin.push(row(req,nome,v,r.raw.slice(0,6).join('<br>')+(r.raw.length>6?'<br>…<br>'+r.raw[r.raw.length-1]:'')));tb.innerHTML=lin.join('')}
   $('#obDot').style.background='var(--ok)';st.textContent='Concluído '+new Date().toLocaleTimeString('pt-BR');
  }catch(e){st.textContent='Erro: '+e;$('#obDot').style.background='var(--er)'}
  finally{if(ant){await fcCmd('v '+ant.kbps);await fcCmd('m '+(ant.modo==='normal'?'normal':'escuta'))}btn.disabled=false}
