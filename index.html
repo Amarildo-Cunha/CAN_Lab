@@ -158,7 +158,7 @@ table{font-size:13px}
 #serLog{max-height:30vh}.noack b{color:var(--c1)}.noack span{flex:1;line-height:1.5}
 footer{margin:28px 28px 0}
 </style></head><body><div class="wrapx">
-<header><div class="brand">PETTERSON <b>TOOLS</b></div><div class="hrow"><h1>CAN Lab <small>v2.25 · USB</small></h1><button id="bUsb" class="pri">Conectar USB</button><span id="con" class="bdg">desconectado</span><span class="mu" id="info"></span></div></header>
+<header><div class="brand">PETTERSON <b>TOOLS</b></div><div class="hrow"><h1>CAN Lab <small>v2.26 · USB</small></h1><button id="bUsb" class="pri">Conectar USB</button><span id="con" class="bdg">desconectado</span><span class="mu" id="info"></span></div></header>
 <div id="msg">Carregando configuração…</div>
 <div class="semusb" id="semusb"><b>Ligue o ESP32 no cabo USB e clique em "Conectar USB".</b><br>
 Escolha a porta COM do ESP32 (CP210x ou CH340). Feche o Monitor Serial do Arduino IDE antes: só um programa pode usar a porta.<br>
@@ -678,7 +678,7 @@ Escolha a porta COM do ESP32 (CP210x ou CH340). Feche o Monitor Serial do Arduin
 </div>
 <div class="sys-box">
 <h3>Informações</h3>
-<div class="mu">Petterson Tools · PT CAN Lab v2.25 (PT-CAN-01) — Dashboard completa com OBD-II · Dashboard por ECU (esconde o que a ECU não informa) · ECU › Iveco › EDC7 (OBD-II ISO 15765-4 · DM1 com nome Iveco) · ECU › Mercedes › GS (diagnóstico KWP 4F5/4F4 · tabela de válvulas) · ECU › Volvo › FCIOM (teste de comunicação) · aviso de ACK na transmissão · ECU › Mercedes › Painel Sprinter (CAN 500 kbps), ECU › Cummins, parâmetros J1939</div>
+<div class="mu">Petterson Tools · PT CAN Lab v2.26 (PT-CAN-01) — Dashboard completa com OBD-II · Dashboard por ECU (esconde o que a ECU não informa) · ECU › Iveco › EDC7 (OBD-II ISO 15765-4 · DM1 com nome Iveco) · ECU › Mercedes › GS (diagnóstico KWP 4F5/4F4 · tabela de válvulas) · ECU › Volvo › FCIOM (teste de comunicação) · aviso de ACK na transmissão · ECU › Mercedes › Painel Sprinter (CAN 500 kbps), ECU › Cummins, parâmetros J1939</div>
 <div class="mu">ESP32 + MCP2515 + TJA1050 · J1939 250 kbps</div>
 <div class="mu" id="sysHeap"></div>
 </div>
@@ -2207,7 +2207,7 @@ $('#ivDm1').onclick=ivLerDm1;
 // com ERRO, a página pergunta o PID equivalente (1 por vez, ~1 s) e mostra "via OBD-II" embaixo do mostrador.
 // Só PIDs de 1 frame (sem flow control). Usa o testador F1, endereço funcional.
 const OBD_MAP={tAgua:[0x05,d=>d[0]-40],tAdm:[0x0F,d=>d[0]-40],rpm:[0x0C,d=>(d[0]*256+d[1])/4],veloc:[0x0D,d=>d[0]],
- carga:[0x04,d=>d[0]*100/255],pRail:[0x23,d=>(d[0]*256+d[1])*10/100],tOleo:[0x5C,d=>d[0]-40],pedal:[0x49,d=>d[0]*100/255]};
+ carga:[0x04,d=>d[0]*100/255],pRail:[0x23,d=>(d[0]*256+d[1])*10/100],pRail2:[0x59,d=>(d[0]*256+d[1])*10/100],tOleo:[0x5C,d=>d[0]-40],pedal:[0x49,d=>d[0]*100/255]};
 const OBD={on:false,cfg:null,sup:null,v:{},usado:{},i:0,busy:false};
 function obdMescla(vals){OBD.usado={};if(!OBD.on)return vals;const now=Date.now(),out=Object.assign({},vals);
  for(const id in OBD.v){const o=OBD.v[id];if(now-o.t>5000)continue;const j=vals[id];
@@ -2225,9 +2225,9 @@ async function loopObd(){
  if(OBD.on&&USB.on&&tab==='dash'&&!OBD.busy&&!fcBusy){OBD.busy=true;
   try{if(!OBD.cfg){if(!(await obdPrepara())){msg('OBD-II: nenhuma ECU respondeu ao 01 00 nesta velocidade');OBD.on=false;$('#dObd').checked=false}
     else msg('OBD-II: ECU '+(OBD.cfg.x?'&'+hx(OBD.cfg.ecu,2)+' (29 bits)':hx(OBD.cfg.ecu,3)+' (11 bits)')+' · PIDs: '+[...OBD.sup].map(p=>hx(p,2)).join(' '))}
-   else{const ids=Object.keys(OBD_MAP).filter(id=>OBD.sup.has(OBD_MAP[id][0])&&GD.some(g=>g.id===id));
+   else{const ids=Object.keys(OBD_MAP).filter(k=>{const id=k.replace(/2$/,'');if(k!==id&&OBD.sup.has(OBD_MAP[id][0]))return false;return OBD.sup.has(OBD_MAP[k][0])&&GD.some(g=>g.id===id)});   // pRail2 = PID 59 (absoluta), só se não houver o 23
     if(ids.length){const id=ids[OBD.i++%ids.length],[pid,f]=OBD_MAP[id];const r=await obPede(OBD.cfg,'01 '+hx(pid,2),600);
-     if(r.res&&r.res.d[0]===0x41&&r.res.d[1]===pid)OBD.v[id]={v:f(r.res.d.slice(2)),t:Date.now()}}}
+     if(r.res&&r.res.d[0]===0x41&&r.res.d[1]===pid)OBD.v[id.replace(/2$/,'')]={v:f(r.res.d.slice(2)),t:Date.now()}}}
   }catch(e){}OBD.busy=false}
  setTimeout(loopObd,OBD.on?250:1000)}
 try{OBD.on=localStorage.getItem('dashObd')==='1'}catch(e){}
