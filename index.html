@@ -55,6 +55,9 @@ p{margin:8px 0}
 .gv{font-size:28px;font-weight:700;margin-top:-4px;font-variant-numeric:tabular-nums;line-height:1.1;transition:color .5s}
 .gu{font-size:11px;color:var(--mu)}
 .dwait{text-align:center;padding:30px;color:var(--mu)}
+.dbar{display:flex;gap:12px;align-items:center;justify-content:space-between;margin:0 0 10px;color:var(--mu);font-size:13px}.dbar b{color:var(--c1)}
+.dfalta{margin-top:12px;font-size:12px;line-height:1.6}.dfalta b{color:var(--tx)}
+.gc.off{display:none}
 .sc{background:var(--pn);border:1px solid var(--ln);border-radius:8px;padding:14px 16px}
 .sh{color:var(--c1);font-weight:700;font-size:14px;margin-bottom:10px;display:flex;align-items:center;gap:8px}
 .sh .dot{width:8px;height:8px;border-radius:50%;background:var(--ok);display:inline-block}
@@ -155,7 +158,7 @@ table{font-size:13px}
 #serLog{max-height:30vh}.noack b{color:var(--c1)}.noack span{flex:1;line-height:1.5}
 footer{margin:28px 28px 0}
 </style></head><body><div class="wrapx">
-<header><div class="brand">PETTERSON <b>TOOLS</b></div><div class="hrow"><h1>CAN Lab <small>v2.23 · USB</small></h1><button id="bUsb" class="pri">Conectar USB</button><span id="con" class="bdg">desconectado</span><span class="mu" id="info"></span></div></header>
+<header><div class="brand">PETTERSON <b>TOOLS</b></div><div class="hrow"><h1>CAN Lab <small>v2.24 · USB</small></h1><button id="bUsb" class="pri">Conectar USB</button><span id="con" class="bdg">desconectado</span><span class="mu" id="info"></span></div></header>
 <div id="msg">Carregando configuração…</div>
 <div class="semusb" id="semusb"><b>Ligue o ESP32 no cabo USB e clique em "Conectar USB".</b><br>
 Escolha a porta COM do ESP32 (CP210x ou CH340). Feche o Monitor Serial do Arduino IDE antes: só um programa pode usar a porta.<br>
@@ -173,7 +176,9 @@ Escolha a porta COM do ESP32 (CP210x ou CH340). Feche o Monitor Serial do Arduin
 </nav>
 
 <section class="pg on" id="dash">
+<div class="dbar" id="dbar" style="display:none"><span id="dInfo"></span><button id="dTodos" class="sm">Mostrar todos</button></div>
 <div class="dash" id="gauges"></div>
+<div class="dfalta mu" id="dFalta"></div>
 <div class="dwait" id="dwait">Aguardando dados J1939…</div>
 </section>
 
@@ -673,7 +678,7 @@ Escolha a porta COM do ESP32 (CP210x ou CH340). Feche o Monitor Serial do Arduin
 </div>
 <div class="sys-box">
 <h3>Informações</h3>
-<div class="mu">Petterson Tools · PT CAN Lab v2.23 (PT-CAN-01) — ECU › Iveco › EDC7 (OBD-II ISO 15765-4 · DM1 com nome Iveco) · ECU › Mercedes › GS (diagnóstico KWP 4F5/4F4 · tabela de válvulas) · ECU › Volvo › FCIOM (teste de comunicação) · aviso de ACK na transmissão · ECU › Mercedes › Painel Sprinter (CAN 500 kbps), ECU › Cummins, parâmetros J1939</div>
+<div class="mu">Petterson Tools · PT CAN Lab v2.24 (PT-CAN-01) — Dashboard por ECU (esconde o que a ECU não informa) · ECU › Iveco › EDC7 (OBD-II ISO 15765-4 · DM1 com nome Iveco) · ECU › Mercedes › GS (diagnóstico KWP 4F5/4F4 · tabela de válvulas) · ECU › Volvo › FCIOM (teste de comunicação) · aviso de ACK na transmissão · ECU › Mercedes › Painel Sprinter (CAN 500 kbps), ECU › Cummins, parâmetros J1939</div>
 <div class="mu">ESP32 + MCP2515 + TJA1050 · J1939 250 kbps</div>
 <div class="mu" id="sysHeap"></div>
 </div>
@@ -973,9 +978,9 @@ const corVar=c=>c.startsWith('var')?getComputedStyle(document.documentElement).g
 function initGauges(){
  let h='';
  for(const g of GD)
-  if(ehBat(g))h+='<div class="gc"><div class="gl">'+g.lbl+'</div>'+batSvg(g.id)+
+  if(ehBat(g))h+='<div class="gc" id="gc_'+g.id+'"><div class="gl">'+g.lbl+'</div>'+batSvg(g.id)+
    '<div class="gv" id="v_'+g.id+'">—</div><div class="gu">'+g.u+'</div><div class="gx" id="x_'+g.id+'"></div></div>';
-  else h+='<div class="gc"><div class="gl">'+g.lbl+'</div>'+
+  else h+='<div class="gc" id="gc_'+g.id+'"><div class="gl">'+g.lbl+'</div>'+
    '<svg viewBox="0 0 120 66" class="gs"><path d="M10,62 A50,50 0 0,1 110,62" fill="none" stroke="#2a2a2d" stroke-width="8" stroke-linecap="round"/>'+
    '<path id="a_'+g.id+'" d="M10,62 A50,50 0 0,1 110,62" fill="none" stroke="#3a3a3d" stroke-width="8" stroke-linecap="round" stroke-dasharray="'+AL+'" stroke-dashoffset="'+AL+'"/>'+
    (ehPed(g)?'<image href="pedal.png" x="39" y="27" width="42" height="30" preserveAspectRatio="xMidYMid meet"/>':'')+'</svg>'+
@@ -1029,7 +1034,30 @@ function updGauges(vals){
  }
  $('#dwait').style.display=any?'none':'block';
  $('#gauges').style.display=any?'grid':'none';
+ dashFiltra(vals,any);
 }
+// v2.24: Dashboard por ECU — cada motor manda um conjunto diferente de PGNs (ex.: o EDC7 UC31 Iveco não manda
+// a pressão do rail, PGN FEDB, e manda o FEEF com a pressão de combustível = FF "não disponível").
+// Depois de 6 s de tráfego, esconde os mostradores que a ECU ligada não informa (valor ou ERRO nos últimos 10 s)
+// e lista embaixo o motivo de cada um. "Mostrar todos" volta a exibir tudo. ERRO (sensor desligado) continua visível.
+const DV={t0:0,ult:0,visto:{},todos:false};
+try{DV.todos=localStorage.getItem('dashTodos')==='1'}catch(e){}
+function dashFiltra(vals,any){
+ const now=Date.now();
+ if(!any){if(DV.ult&&now-DV.ult>5000){DV.t0=0;DV.visto={}}   // rede parou: a próxima ECU começa do zero
+  $('#dbar').style.display='none';$('#dFalta').textContent='';return}
+ DV.ult=now;if(!DV.t0)DV.t0=now;
+ for(const g of GD)if(vals[g.id]!==undefined&&vals[g.id]!==null)DV.visto[g.id]=now;
+ const aprendendo=now-DV.t0<6000,falta=[];let n=0;
+ for(const g of GD){const ok=DV.visto[g.id]&&now-DV.visto[g.id]<10000;
+  const c=$('#gc_'+g.id);if(c)c.classList.toggle('off',!DV.todos&&!aprendendo&&!ok);
+  if(ok)n++;else if(!aprendendo)falta.push('<b>'+g.lbl+'</b> ('+(lastPgn[g.pgn]?'PGN '+hx(g.pgn,4)+' chega com o byte '+((g.sb||0)+1)+' = FF, não disponível':'PGN '+hx(g.pgn,4)+' não aparece na rede')+')')}
+ $('#dbar').style.display='flex';
+ $('#dInfo').innerHTML=aprendendo?'Identificando o que esta ECU informa…':'Esta ECU informa <b>'+n+'</b> de '+GD.length+' mostradores'+(DV.todos?' · mostrando todos':'');
+ $('#dTodos').textContent=DV.todos?'Só os desta ECU':'Mostrar todos';
+ $('#dFalta').innerHTML=falta.length?'Não informados por esta ECU: '+falta.join(' · '):'';
+}
+$('#dTodos').onclick=()=>{DV.todos=!DV.todos;try{localStorage.setItem('dashTodos',DV.todos?'1':'0')}catch(e){}};
 
 function updScan(vals,nIds,fps){
  let any=false,h='';
